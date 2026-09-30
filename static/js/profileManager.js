@@ -1,4 +1,4 @@
-/**
+/*
  * CareerPilot AI - Profile Manager
  * Real user profile + image upload + education management
  */
@@ -41,7 +41,6 @@ class ProfileManager {
 
             phone: "",
             location: "",
-
             linkedin: "",
             github: "",
             website: "",
@@ -96,20 +95,27 @@ class ProfileManager {
         const fields = {
 
             profFullName: this.profileData.fullName,
+
             profEmail: this.profileData.email,
+
             profPhone: this.profileData.phone,
+
             profLocation: this.profileData.location,
 
             profLinkedin: this.profileData.linkedin,
+
             profGithub: this.profileData.github,
+
             profWebsite: this.profileData.website,
 
             profObjective: this.profileData.objective,
 
             profCertifications: this.profileData.certifications,
+
             profAchievements: this.profileData.achievements,
 
             profLanguages: this.profileData.languages,
+
             profInterests: this.profileData.interests
         };
 
@@ -126,23 +132,26 @@ class ProfileManager {
 
 
         const userGender =
-            (app.user && app.user.gender) ||
+            (window.app && app.user && app.user.gender) ||
             this.profileData.gender ||
             "female";
+
 
         this.highlightAvatarOption(userGender);
     }
 
 
     // ==========================================
-    // PROFILE IMAGE
+    // PROFILE IMAGE PREVIEW
     // ==========================================
 
     updateProfileImagePreview() {
 
-        const image = document.getElementById("profilePhotoPreview");
+        const image =
+            document.getElementById("profilePhotoPreview");
 
         if (!image) return;
+
 
         image.src =
             this.profileData.avatarUrl ||
@@ -150,9 +159,14 @@ class ProfileManager {
     }
 
 
+    // ==========================================
+    // PROFILE IMAGE UPLOAD
+    // ==========================================
+
     async handleProfileImage(input) {
 
-        const file = input.files && input.files[0];
+        const file =
+            input.files && input.files[0];
 
         if (!file) return;
 
@@ -168,10 +182,14 @@ class ProfileManager {
 
         if (!allowedTypes.includes(file.type)) {
 
-            app.showToast(
-                "Please upload JPG, PNG or WEBP image.",
-                "error"
-            );
+            if (window.app && app.showToast) {
+
+                app.showToast(
+                    "Please upload JPG, PNG or WEBP image.",
+                    "error"
+                );
+
+            }
 
             input.value = "";
 
@@ -179,13 +197,17 @@ class ProfileManager {
         }
 
 
-        // 5 MB maximum
-        if (file.size > 5 * 1024 * 1024) {
+        // Maximum 2 MB
+        if (file.size > 2 * 1024 * 1024) {
 
-            app.showToast(
-                "Profile image must be smaller than 5 MB.",
-                "error"
-            );
+            if (window.app && app.showToast) {
+
+                app.showToast(
+                    "Profile image must be 2 MB or smaller.",
+                    "error"
+                );
+
+            }
 
             input.value = "";
 
@@ -193,46 +215,74 @@ class ProfileManager {
         }
 
 
-        // Instant browser preview
+        // ==========================================
+        // INSTANT BROWSER PREVIEW
+        // ==========================================
+
         const reader = new FileReader();
+
 
         reader.onload = (event) => {
 
             const preview =
-                document.getElementById("profilePhotoPreview");
+                document.getElementById(
+                    "profilePhotoPreview"
+                );
+
 
             if (preview) {
-                preview.src = event.target.result;
+
+                preview.src =
+                    event.target.result;
             }
         };
+
 
         reader.readAsDataURL(file);
 
 
-        // Upload to Flask
+        // ==========================================
+        // UPLOAD TO FLASK
+        // ==========================================
+
         const formData = new FormData();
 
-        formData.append("profileImage", file);
+
+        /*
+         * IMPORTANT:
+         * Backend expects:
+         * request.files.get("avatar")
+         */
+
+        formData.append(
+            "avatar",
+            file
+        );
 
 
         try {
 
-            app.showToast(
-                "Uploading profile photo...",
-                "info"
-            );
+            if (window.app && app.showToast) {
+
+                app.showToast(
+                    "Uploading profile photo...",
+                    "info"
+                );
+            }
 
 
-            const response = await fetch(
-                "/api/profile/avatar",
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
+            const response =
+                await fetch(
+                    "/api/profile/avatar",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
 
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
 
             if (!response.ok || !data.success) {
@@ -244,28 +294,44 @@ class ProfileManager {
             }
 
 
+            // Save returned server URL
             this.profileData.avatarUrl =
                 data.avatarUrl;
 
 
+            // Save locally
             localStorage.setItem(
                 "careerpilot_profile",
-                JSON.stringify(this.profileData)
+                JSON.stringify(
+                    this.profileData
+                )
             );
 
 
+            // Update preview
             this.updateProfileImagePreview();
 
 
-            if (app.renderUserNav) {
+            // Update navbar avatar
+            if (
+                window.app &&
+                app.renderUserNav
+            ) {
+
                 app.renderUserNav();
             }
 
 
-            app.showToast(
-                "Profile photo uploaded successfully!",
-                "success"
-            );
+            if (
+                window.app &&
+                app.showToast
+            ) {
+
+                app.showToast(
+                    "Profile photo uploaded successfully!",
+                    "success"
+                );
+            }
 
         }
         catch (error) {
@@ -275,18 +341,31 @@ class ProfileManager {
                 error
             );
 
-            app.showToast(
-                "Could not upload profile photo.",
-                "error"
-            );
+
+            if (
+                window.app &&
+                app.showToast
+            ) {
+
+                app.showToast(
+                    error.message ||
+                    "Could not upload profile photo.",
+                    "error"
+                );
+            }
         }
     }
 
 
+    // ==========================================
+    // REMOVE / RESET PROFILE IMAGE
+    // ==========================================
+
     removeProfileImage() {
 
         const user =
-            app.user || {};
+            (window.app && app.user) || {};
+
 
         let defaultAvatar =
             "/static/images/avatar-female.svg";
@@ -296,8 +375,8 @@ class ProfileManager {
 
             defaultAvatar =
                 "/static/images/avatar-admin.svg";
-
         }
+
         else if (user.gender === "male") {
 
             defaultAvatar =
@@ -313,17 +392,84 @@ class ProfileManager {
 
 
         const input =
-            document.getElementById("profilePhotoInput");
+            document.getElementById(
+                "profilePhotoInput"
+            );
+
 
         if (input) {
             input.value = "";
         }
 
 
-        app.showToast(
-            "Profile photo reset to default avatar.",
-            "info"
-        );
+        if (
+            window.app &&
+            app.showToast
+        ) {
+
+            app.showToast(
+                "Profile photo reset to default avatar.",
+                "info"
+            );
+        }
+    }
+
+
+    // ==========================================
+    // USE GENDER AVATAR
+    // ==========================================
+
+    useGenderAvatar() {
+
+        const user =
+            (window.app && app.user) || {};
+
+
+        if (user.role === "admin") {
+
+            this.profileData.avatarUrl =
+                "/static/images/avatar-admin.svg";
+        }
+
+        else if (
+            this.profileData.gender === "male"
+        ) {
+
+            this.profileData.avatarUrl =
+                "/static/images/avatar-male.svg";
+        }
+
+        else {
+
+            this.profileData.avatarUrl =
+                "/static/images/avatar-female.svg";
+        }
+
+
+        this.updateProfileImagePreview();
+
+
+        const input =
+            document.getElementById(
+                "profilePhotoInput"
+            );
+
+
+        if (input) {
+            input.value = "";
+        }
+
+
+        if (
+            window.app &&
+            app.showToast
+        ) {
+
+            app.showToast(
+                "Default avatar selected.",
+                "success"
+            );
+        }
     }
 
 
@@ -334,6 +480,7 @@ class ProfileManager {
     selectGender(gender) {
 
         if (
+            window.app &&
             app.user &&
             app.user.role === "admin"
         ) {
@@ -341,18 +488,20 @@ class ProfileManager {
         }
 
 
-        if (app.user) {
-            app.user.gender = gender;
+        if (
+            window.app &&
+            app.user
+        ) {
+
+            app.user.gender =
+                gender;
         }
 
 
-        this.profileData.gender = gender;
+        this.profileData.gender =
+            gender;
 
 
-        /*
-         * Only change avatar if the user
-         * is currently using a default avatar.
-         */
         const currentAvatar =
             this.profileData.avatarUrl || "";
 
@@ -363,6 +512,11 @@ class ProfileManager {
             );
 
 
+        /*
+         * Do not replace a custom uploaded image
+         * when gender is changed.
+         */
+
         if (!isCustomImage) {
 
             this.profileData.avatarUrl =
@@ -370,75 +524,111 @@ class ProfileManager {
                     ? "/static/images/avatar-male.svg"
                     : "/static/images/avatar-female.svg";
 
+
             this.updateProfileImagePreview();
         }
 
 
-        this.highlightAvatarOption(gender);
+        this.highlightAvatarOption(
+            gender
+        );
 
 
-        if (app.renderUserNav) {
+        if (
+            window.app &&
+            app.renderUserNav
+        ) {
+
             app.renderUserNav();
         }
 
 
-        app.showToast(
-            `Avatar preset updated to ${
-                gender === "female"
-                    ? "Female 👩"
-                    : "Male 👨"
-            } Candidate`,
-            "success"
-        );
+        if (
+            window.app &&
+            app.showToast
+        ) {
+
+            app.showToast(
+                `Avatar preset updated to ${
+                    gender === "female"
+                        ? "Female 👩"
+                        : "Male 👨"
+                } Candidate`,
+                "success"
+            );
+        }
     }
 
+
+    // ==========================================
+    // HIGHLIGHT AVATAR
+    // ==========================================
 
     highlightAvatarOption(gender) {
 
         const female =
-            document.getElementById("avatarOptFemale");
+            document.getElementById(
+                "avatarOptFemale"
+            );
 
         const male =
-            document.getElementById("avatarOptMale");
+            document.getElementById(
+                "avatarOptMale"
+            );
 
         const admin =
-            document.getElementById("avatarOptAdmin");
+            document.getElementById(
+                "avatarOptAdmin"
+            );
 
 
         [female, male, admin].forEach(
             element => {
 
                 if (element) {
+
                     element.classList.remove(
                         "selected"
                     );
                 }
-
             }
         );
 
 
         if (
+            window.app &&
             app.user &&
             app.user.role === "admin"
         ) {
 
             if (admin) {
-                admin.classList.add("selected");
+
+                admin.classList.add(
+                    "selected"
+                );
             }
 
+            return;
         }
-        else if (gender === "male") {
+
+
+        if (gender === "male") {
 
             if (male) {
-                male.classList.add("selected");
-            }
 
+                male.classList.add(
+                    "selected"
+                );
+            }
         }
+
         else {
 
             if (female) {
-                female.classList.add("selected");
+
+                female.classList.add(
+                    "selected"
+                );
             }
         }
     }
@@ -451,32 +641,50 @@ class ProfileManager {
     switchTab(tabId) {
 
         document
-            .querySelectorAll(".profile-tab-btn")
+            .querySelectorAll(
+                ".profile-tab-btn"
+            )
             .forEach(btn =>
-                btn.classList.remove("active")
+                btn.classList.remove(
+                    "active"
+                )
             );
 
 
         document
-            .querySelectorAll(".profile-tab-content")
+            .querySelectorAll(
+                ".profile-tab-content"
+            )
             .forEach(content =>
-                content.classList.remove("active")
+                content.classList.remove(
+                    "active"
+                )
             );
 
 
         const targetButton =
-            [...document.querySelectorAll(
-                ".profile-tab-btn"
-            )].find(
+            [
+                ...document.querySelectorAll(
+                    ".profile-tab-btn"
+                )
+            ].find(
                 btn =>
-                    btn.getAttribute("onclick") &&
-                    btn.getAttribute("onclick")
-                        .includes(`'${tabId}'`)
+                    btn.getAttribute(
+                        "onclick"
+                    ) &&
+                    btn.getAttribute(
+                        "onclick"
+                    ).includes(
+                        `'${tabId}'`
+                    )
             );
 
 
         if (targetButton) {
-            targetButton.classList.add("active");
+
+            targetButton.classList.add(
+                "active"
+            );
         }
 
 
@@ -487,7 +695,10 @@ class ProfileManager {
 
 
         if (target) {
-            target.classList.add("active");
+
+            target.classList.add(
+                "active"
+            );
         }
     }
 
@@ -503,6 +714,7 @@ class ProfileManager {
                 "skillsTagsContainer"
             );
 
+
         if (!container) return;
 
 
@@ -510,14 +722,18 @@ class ProfileManager {
             this.profileData.skills
                 .map(
                     (skill, index) => `
+
                         <span class="skill-tag">
+
                             ${this.escapeHtml(skill)}
 
                             <i
                                 class="fa-solid fa-xmark"
                                 onclick="profileManager.removeSkill(${index})"
                             ></i>
+
                         </span>
+
                     `
                 )
                 .join("");
@@ -527,7 +743,10 @@ class ProfileManager {
     addSkillTag() {
 
         const input =
-            document.getElementById("skillInput");
+            document.getElementById(
+                "skillInput"
+            );
+
 
         if (!input) return;
 
@@ -535,13 +754,16 @@ class ProfileManager {
         const value =
             input.value.trim();
 
+
         if (!value) return;
 
 
         const skills =
             value
                 .split(",")
-                .map(skill => skill.trim())
+                .map(skill =>
+                    skill.trim()
+                )
                 .filter(Boolean);
 
 
@@ -557,11 +779,11 @@ class ProfileManager {
                     skill
                 );
             }
-
         });
 
 
         input.value = "";
+
 
         this.renderSkills();
 
@@ -575,6 +797,7 @@ class ProfileManager {
             index,
             1
         );
+
 
         this.renderSkills();
 
@@ -593,6 +816,7 @@ class ProfileManager {
                 "educationListContainer"
             );
 
+
         if (!container) return;
 
 
@@ -606,59 +830,111 @@ class ProfileManager {
 
 
                         return `
-                            <div class="dynamic-item-card">
+
+                            <div
+                                class="dynamic-item-card education-card"
+                            >
 
                                 <button
                                     type="button"
                                     class="remove-btn"
                                     onclick="profileManager.removeEducation(${index})"
+                                    title="Remove education"
                                 >
-                                    <i class="fa-solid fa-trash"></i>
+
+                                    <i
+                                        class="fa-solid fa-trash"
+                                    ></i>
+
                                 </button>
+
+
+                                <div class="education-card-header">
+
+                                    <h4>
+                                        Education ${index + 1}
+                                    </h4>
+
+                                    ${
+                                        level
+                                            ? `
+                                                <span class="education-level-badge">
+                                                    ${this.escapeHtml(level)}
+                                                </span>
+                                              `
+                                            : ""
+                                    }
+
+                                </div>
 
 
                                 <div class="form-grid">
 
+
                                     <!-- Education Type -->
 
-                                    <div class="form-group col-span-2">
+                                    <div
+                                        class="form-group col-span-2"
+                                    >
 
                                         <label>
                                             Education Type *
                                         </label>
 
+
                                         <select
                                             class="form-control edu-level"
+                                            onchange="profileManager.updateEducationLevel(${index}, this.value)"
                                         >
 
                                             <option value="">
                                                 Select Education Type
                                             </option>
 
+
                                             <option
                                                 value="10th"
-                                                ${level === "10th" ? "selected" : ""}
+                                                ${
+                                                    level === "10th"
+                                                        ? "selected"
+                                                        : ""
+                                                }
                                             >
                                                 10th
                                             </option>
 
+
                                             <option
                                                 value="12th"
-                                                ${level === "12th" ? "selected" : ""}
+                                                ${
+                                                    level === "12th"
+                                                        ? "selected"
+                                                        : ""
+                                                }
                                             >
                                                 12th
                                             </option>
 
+
                                             <option
                                                 value="Diploma"
-                                                ${level === "Diploma" ? "selected" : ""}
+                                                ${
+                                                    level === "Diploma"
+                                                        ? "selected"
+                                                        : ""
+                                                }
                                             >
                                                 Diploma
                                             </option>
 
+
                                             <option
                                                 value="Graduation"
-                                                ${level === "Graduation" ? "selected" : ""}
+                                                ${
+                                                    level === "Graduation"
+                                                        ? "selected"
+                                                        : ""
+                                                }
                                             >
                                                 Graduation
                                             </option>
@@ -668,13 +944,16 @@ class ProfileManager {
                                     </div>
 
 
-                                    <!-- School / University -->
+                                    <!-- School / College -->
 
-                                    <div class="form-group col-span-2">
+                                    <div
+                                        class="form-group col-span-2"
+                                    >
 
                                         <label>
                                             School / College / University *
                                         </label>
+
 
                                         <input
                                             type="text"
@@ -694,11 +973,12 @@ class ProfileManager {
                                             Course / Degree
                                         </label>
 
+
                                         <input
                                             type="text"
                                             class="form-control edu-course"
                                             value="${this.escapeAttribute(edu.course || "")}"
-                                            placeholder="e.g. B.Tech CSE / Diploma in Engineering"
+                                            placeholder="e.g. B.Tech / Diploma"
                                         >
 
                                     </div>
@@ -711,6 +991,7 @@ class ProfileManager {
                                         <label>
                                             Specialization / Stream
                                         </label>
+
 
                                         <input
                                             type="text"
@@ -730,6 +1011,7 @@ class ProfileManager {
                                             Percentage / CGPA / Score
                                         </label>
 
+
                                         <input
                                             type="text"
                                             class="form-control edu-cgpa"
@@ -748,6 +1030,7 @@ class ProfileManager {
                                             Year / Duration
                                         </label>
 
+
                                         <input
                                             type="text"
                                             class="form-control edu-duration"
@@ -760,12 +1043,57 @@ class ProfileManager {
                                 </div>
 
                             </div>
+
                         `;
                     }
                 )
                 .join("");
     }
 
+
+    // ==========================================
+    // UPDATE EDUCATION LEVEL
+    // ==========================================
+
+    updateEducationLevel(index, level) {
+
+        if (
+            !this.profileData.education[index]
+        ) {
+            return;
+        }
+
+
+        this.profileData.education[index].level =
+            level;
+
+
+        /*
+         * Keep degree field compatible
+         * with resumeBuilder.js
+         */
+
+        if (level === "Graduation") {
+
+            this.profileData.education[index].degree =
+                this.profileData.education[index].course || "";
+
+        }
+
+        else {
+
+            this.profileData.education[index].degree =
+                level;
+        }
+
+
+        this.renderEducationList();
+    }
+
+
+    // ==========================================
+    // ADD EDUCATION
+    // ==========================================
 
     addEducationField() {
 
@@ -785,13 +1113,19 @@ class ProfileManager {
 
             // Resume compatibility
             degree: ""
-
         });
 
 
         this.renderEducationList();
+
+
+        this.calculateCompleteness();
     }
 
+
+    // ==========================================
+    // REMOVE EDUCATION
+    // ==========================================
 
     removeEducation(index) {
 
@@ -799,6 +1133,7 @@ class ProfileManager {
             index,
             1
         );
+
 
         this.renderEducationList();
 
@@ -817,6 +1152,7 @@ class ProfileManager {
                 "projectsListContainer"
             );
 
+
         if (!container) return;
 
 
@@ -824,23 +1160,35 @@ class ProfileManager {
             this.profileData.projects
                 .map(
                     (project, index) => `
-                        <div class="dynamic-item-card">
+
+                        <div
+                            class="dynamic-item-card"
+                        >
 
                             <button
                                 type="button"
                                 class="remove-btn"
                                 onclick="profileManager.removeProject(${index})"
                             >
-                                <i class="fa-solid fa-trash"></i>
+
+                                <i
+                                    class="fa-solid fa-trash"
+                                ></i>
+
                             </button>
+
 
                             <div class="form-grid">
 
-                                <div class="form-group col-span-2">
+
+                                <div
+                                    class="form-group col-span-2"
+                                >
 
                                     <label>
                                         Project Title
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -852,11 +1200,14 @@ class ProfileManager {
                                 </div>
 
 
-                                <div class="form-group col-span-2">
+                                <div
+                                    class="form-group col-span-2"
+                                >
 
                                     <label>
                                         Description & Key Features
                                     </label>
+
 
                                     <textarea
                                         class="form-control proj-desc"
@@ -872,6 +1223,7 @@ class ProfileManager {
                                     <label>
                                         Technologies Used
                                     </label>
+
 
                                     <input
                                         type="text"
@@ -889,11 +1241,12 @@ class ProfileManager {
                                         GitHub Repository URL
                                     </label>
 
+
                                     <input
                                         type="url"
                                         class="form-control proj-github"
                                         value="${this.escapeAttribute(project.github || "")}"
-                                        placeholder="https://github.com/user/repo"
+                                        placeholder="https://github.com/username/repository"
                                     >
 
                                 </div>
@@ -901,6 +1254,7 @@ class ProfileManager {
                             </div>
 
                         </div>
+
                     `
                 )
                 .join("");
@@ -912,11 +1266,14 @@ class ProfileManager {
         this.profileData.projects.push({
 
             title: "",
-            description: "",
-            tech: "",
-            github: ""
 
+            description: "",
+
+            tech: "",
+
+            github: ""
         });
+
 
         this.renderProjectsList();
     }
@@ -928,6 +1285,7 @@ class ProfileManager {
             index,
             1
         );
+
 
         this.renderProjectsList();
 
@@ -946,6 +1304,7 @@ class ProfileManager {
                 "experienceListContainer"
             );
 
+
         if (!container) return;
 
 
@@ -953,17 +1312,26 @@ class ProfileManager {
             this.profileData.experience
                 .map(
                     (experience, index) => `
-                        <div class="dynamic-item-card">
+
+                        <div
+                            class="dynamic-item-card"
+                        >
 
                             <button
                                 type="button"
                                 class="remove-btn"
                                 onclick="profileManager.removeExperience(${index})"
                             >
-                                <i class="fa-solid fa-trash"></i>
+
+                                <i
+                                    class="fa-solid fa-trash"
+                                ></i>
+
                             </button>
 
+
                             <div class="form-grid">
+
 
                                 <div class="form-group">
 
@@ -971,11 +1339,12 @@ class ProfileManager {
                                         Job Title / Role
                                     </label>
 
+
                                     <input
                                         type="text"
                                         class="form-control exp-role"
                                         value="${this.escapeAttribute(experience.role || "")}"
-                                        placeholder="Software Engineering Intern"
+                                        placeholder="Your actual job role"
                                     >
 
                                 </div>
@@ -987,6 +1356,7 @@ class ProfileManager {
                                         Company / Organization
                                     </label>
 
+
                                     <input
                                         type="text"
                                         class="form-control exp-company"
@@ -997,27 +1367,33 @@ class ProfileManager {
                                 </div>
 
 
-                                <div class="form-group col-span-2">
+                                <div
+                                    class="form-group col-span-2"
+                                >
 
                                     <label>
                                         Duration / Date Range
                                     </label>
 
+
                                     <input
                                         type="text"
                                         class="form-control exp-duration"
                                         value="${this.escapeAttribute(experience.duration || "")}"
-                                        placeholder="Jun 2025 - Present"
+                                        placeholder="e.g. Jun 2025 - Present"
                                     >
 
                                 </div>
 
 
-                                <div class="form-group col-span-2">
+                                <div
+                                    class="form-group col-span-2"
+                                >
 
                                     <label>
                                         Responsibilities & Achievements
                                     </label>
+
 
                                     <textarea
                                         class="form-control exp-desc"
@@ -1030,6 +1406,7 @@ class ProfileManager {
                             </div>
 
                         </div>
+
                     `
                 )
                 .join("");
@@ -1041,11 +1418,14 @@ class ProfileManager {
         this.profileData.experience.push({
 
             role: "",
-            company: "",
-            duration: "",
-            description: ""
 
+            company: "",
+
+            duration: "",
+
+            description: ""
         });
+
 
         this.renderExperienceList();
     }
@@ -1057,6 +1437,7 @@ class ProfileManager {
             index,
             1
         );
+
 
         this.renderExperienceList();
 
@@ -1075,46 +1456,60 @@ class ProfileManager {
             const element =
                 document.getElementById(id);
 
+
             return element
                 ? element.value.trim()
                 : "";
         };
 
 
-        // Personal data
+        // ==========================================
+        // PERSONAL DATA
+        // ==========================================
 
         this.profileData.fullName =
             getValue("profFullName");
 
+
         this.profileData.email =
             getValue("profEmail");
+
 
         this.profileData.phone =
             getValue("profPhone");
 
+
         this.profileData.location =
             getValue("profLocation");
+
 
         this.profileData.linkedin =
             getValue("profLinkedin");
 
+
         this.profileData.github =
             getValue("profGithub");
+
 
         this.profileData.website =
             getValue("profWebsite");
 
+
         this.profileData.objective =
             getValue("profObjective");
+
 
         this.profileData.certifications =
             getValue("profCertifications");
 
+
         this.profileData.achievements =
             getValue("profAchievements");
 
+
         this.profileData.languages =
             getValue("profLanguages");
+
 
         this.profileData.interests =
             getValue("profInterests");
@@ -1131,7 +1526,9 @@ class ProfileManager {
 
 
         this.profileData.education =
-            Array.from(educationCards)
+            Array.from(
+                educationCards
+            )
                 .map(card => {
 
                     const level =
@@ -1185,15 +1582,15 @@ class ProfileManager {
                         duration,
 
                         /*
-                         * Keep degree for compatibility
-                         * with existing resumeBuilder.js
+                         * Keep degree for
+                         * resumeBuilder compatibility.
                          */
+
                         degree:
                             level === "Graduation"
                                 ? course
                                 : level
                     };
-
                 });
 
 
@@ -1208,7 +1605,9 @@ class ProfileManager {
 
 
         this.profileData.projects =
-            Array.from(projectCards)
+            Array.from(
+                projectCards
+            )
                 .map(card => ({
 
                     title:
@@ -1216,21 +1615,23 @@ class ProfileManager {
                             ".proj-title"
                         )?.value.trim() || "",
 
+
                     description:
                         card.querySelector(
                             ".proj-desc"
                         )?.value.trim() || "",
+
 
                     tech:
                         card.querySelector(
                             ".proj-tech"
                         )?.value.trim() || "",
 
+
                     github:
                         card.querySelector(
                             ".proj-github"
                         )?.value.trim() || ""
-
                 }));
 
 
@@ -1245,7 +1646,9 @@ class ProfileManager {
 
 
         this.profileData.experience =
-            Array.from(experienceCards)
+            Array.from(
+                experienceCards
+            )
                 .map(card => ({
 
                     role:
@@ -1253,21 +1656,23 @@ class ProfileManager {
                             ".exp-role"
                         )?.value.trim() || "",
 
+
                     company:
                         card.querySelector(
                             ".exp-company"
                         )?.value.trim() || "",
+
 
                     duration:
                         card.querySelector(
                             ".exp-duration"
                         )?.value.trim() || "",
 
+
                     description:
                         card.querySelector(
                             ".exp-desc"
                         )?.value.trim() || ""
-
                 }));
 
 
@@ -1277,7 +1682,9 @@ class ProfileManager {
 
         localStorage.setItem(
             "careerpilot_profile",
-            JSON.stringify(this.profileData)
+            JSON.stringify(
+                this.profileData
+            )
         );
 
 
@@ -1285,7 +1692,7 @@ class ProfileManager {
 
 
         // ==========================================
-        // SQLITE
+        // SAVE TO SQLITE
         // ==========================================
 
         try {
@@ -1313,7 +1720,10 @@ class ProfileManager {
                 await response.json();
 
 
-            if (!response.ok || !data.success) {
+            if (
+                !response.ok ||
+                !data.success
+            ) {
 
                 throw new Error(
                     data.message ||
@@ -1327,6 +1737,7 @@ class ProfileManager {
                 this.profileData;
 
 
+            // Save latest server data locally
             localStorage.setItem(
                 "careerpilot_profile",
                 JSON.stringify(
@@ -1335,9 +1746,13 @@ class ProfileManager {
             );
 
 
-            // Sync resume builder
+            // ==========================================
+            // SYNC RESUME BUILDER
+            // ==========================================
 
-            if (window.resumeBuilder) {
+            if (
+                window.resumeBuilder
+            ) {
 
                 resumeBuilder.resumeData =
                     JSON.parse(
@@ -1346,21 +1761,46 @@ class ProfileManager {
                         )
                     );
 
-                resumeBuilder.populateEditFields();
 
-                resumeBuilder.renderPreview();
+                if (
+                    typeof resumeBuilder.populateEditFields ===
+                    "function"
+                ) {
+
+                    resumeBuilder.populateEditFields();
+                }
+
+
+                if (
+                    typeof resumeBuilder.renderPreview ===
+                    "function"
+                ) {
+
+                    resumeBuilder.renderPreview();
+                }
             }
 
 
-            if (app.renderUserNav) {
+            // Update navbar
+            if (
+                window.app &&
+                app.renderUserNav
+            ) {
+
                 app.renderUserNav();
             }
 
 
-            app.showToast(
-                "Profile saved successfully!",
-                "success"
-            );
+            if (
+                window.app &&
+                app.showToast
+            ) {
+
+                app.showToast(
+                    "Profile saved successfully!",
+                    "success"
+                );
+            }
 
         }
         catch (error) {
@@ -1370,10 +1810,18 @@ class ProfileManager {
                 error
             );
 
-            app.showToast(
-                "Could not save profile to server.",
-                "error"
-            );
+
+            if (
+                window.app &&
+                app.showToast
+            ) {
+
+                app.showToast(
+                    error.message ||
+                    "Could not save profile to server.",
+                    "error"
+                );
+            }
         }
     }
 
@@ -1387,54 +1835,68 @@ class ProfileManager {
         let score = 0;
 
 
-        if (this.profileData.fullName)
+        if (this.profileData.fullName) {
             score += 15;
+        }
 
 
-        if (this.profileData.objective)
+        if (this.profileData.objective) {
             score += 15;
+        }
 
 
         if (
             this.profileData.skills.length >= 5
-        )
+        ) {
+
             score += 20;
+        }
 
 
         if (
             this.profileData.education.length >= 1
-        )
+        ) {
+
             score += 15;
+        }
 
 
         if (
             this.profileData.projects.length >= 1
-        )
+        ) {
+
             score += 15;
+        }
 
 
         if (
             this.profileData.experience.length >= 1
-        )
+        ) {
+
             score += 10;
+        }
 
 
         if (
             this.profileData.certifications
-        )
+        ) {
+
             score += 10;
+        }
 
 
-        score = Math.min(
-            100,
-            score
-        );
+        score =
+            Math.min(
+                100,
+                score
+            );
 
 
         const percent =
             document.getElementById(
                 "profileCompletenessPercent"
             );
+
 
         const fill =
             document.getElementById(
@@ -1443,12 +1905,14 @@ class ProfileManager {
 
 
         if (percent) {
+
             percent.textContent =
                 `${score}%`;
         }
 
 
         if (fill) {
+
             fill.style.width =
                 `${score}%`;
         }
@@ -1459,6 +1923,7 @@ class ProfileManager {
                 "sidebarReadinessScore"
             );
 
+
         const sidebarFill =
             document.getElementById(
                 "sidebarReadinessFill"
@@ -1466,12 +1931,14 @@ class ProfileManager {
 
 
         if (sidebarScore) {
+
             sidebarScore.textContent =
                 `${score}%`;
         }
 
 
         if (sidebarFill) {
+
             sidebarFill.style.width =
                 `${score}%`;
         }
@@ -1485,17 +1952,39 @@ class ProfileManager {
     escapeHtml(value) {
 
         return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+
+            .replace(
+                /</g,
+                "&lt;"
+            )
+
+            .replace(
+                />/g,
+                "&gt;"
+            )
+
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+
+            .replace(
+                /'/g,
+                "&#039;"
+            );
     }
 
 
     escapeAttribute(value) {
 
-        return this.escapeHtml(value);
+        return this.escapeHtml(
+            value
+        );
     }
 }
 
