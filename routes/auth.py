@@ -1,3 +1,5 @@
+import os
+from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
@@ -403,4 +405,229 @@ def save_profile():
         "success": True,
         "message": "Profile saved successfully!",
         "profile": data
+    })
+# ==========================================
+# PROFILE IMAGE UPLOAD
+# ==========================================
+
+@auth.route("/api/profile/avatar", methods=["POST"])
+def upload_profile_avatar():
+
+    user_id = session.get("user_id")
+
+    if not user_id:
+
+        return jsonify({
+            "success": False,
+            "message": "Not logged in."
+        }), 401
+
+
+    if "profileImage" not in request.files:
+
+        return jsonify({
+            "success": False,
+            "message": "No profile image selected."
+        }), 400
+
+
+    file = request.files["profileImage"]
+
+
+    if not file or not file.filename:
+
+        return jsonify({
+            "success": False,
+            "message": "Invalid image."
+        }), 400
+
+
+    allowed_extensions = {
+        "png",
+        "jpg",
+        "jpeg",
+        "webp"
+    }
+
+
+    original_name = file.filename
+
+    extension = (
+        original_name
+        .rsplit(".", 1)[-1]
+        .lower()
+        if "." in original_name
+        else ""
+    )
+
+
+    if extension not in allowed_extensions:
+
+        return jsonify({
+            "success": False,
+            "message": "Only JPG, JPEG, PNG and WEBP images are allowed."
+        }), 400
+
+
+    safe_extension = extension
+
+
+    upload_directory = os.path.join(
+        "static",
+        "uploads",
+        "profile_images"
+    )
+
+
+    os.makedirs(
+        upload_directory,
+        exist_ok=True
+    )
+
+
+    filename = (
+        f"user_{user_id}.{safe_extension}"
+    )
+
+
+    filepath = os.path.join(
+        upload_directory,
+        filename
+    )
+
+
+    # Save image
+    file.save(filepath)
+
+
+    avatar_url = (
+        f"/static/uploads/profile_images/{filename}"
+    )
+
+
+    connection = get_db_connection()
+
+
+    # Get existing profile
+    profile = connection.execute(
+        """
+        SELECT profile_data
+        FROM profiles
+        WHERE user_id = ?
+        """,
+        (user_id,)
+    ).fetchone()
+
+
+    if profile:
+
+        profile_data = json.loads(
+            profile["profile_data"]
+        )
+
+    else:
+
+        user = connection.execute(
+            """
+            SELECT name, email, gender
+            FROM users
+            WHERE id = ?
+            """,
+            (user_id,)
+        ).fetchone()
+
+
+        if not user:
+
+            connection.close()
+
+            return jsonify({
+                "success": False,
+                "message": "User not found."
+            }), 404
+
+
+        profile_data = {
+
+            "fullName": user["name"],
+            "email": user["email"],
+            "gender": user["gender"] or "",
+
+            "avatarUrl": avatar_url,
+
+            "phone": "",
+            "location": "",
+            "linkedin": "",
+            "github": "",
+            "website": "",
+
+            "headline": "",
+            "objective": "",
+
+            "skills": [],
+            "education": [],
+            "projects": [],
+            "experience": [],
+
+            "certifications": "",
+            "achievements": "",
+            "languages": "",
+            "interests": ""
+        }
+
+
+    profile_data["avatarUrl"] = avatar_url
+
+
+    profile_json = json.dumps(
+        profile_data
+    )
+
+
+    if profile:
+
+        connection.execute(
+            """
+            UPDATE profiles
+            SET profile_data = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+            """,
+            (
+                profile_json,
+                user_id
+            )
+        )
+
+    else:
+
+        connection.execute(
+            """
+            INSERT INTO profiles
+            (
+                user_id,
+                profile_data
+            )
+            VALUES (?, ?)
+            """,
+            (
+                user_id,
+                profile_json
+            )
+        )
+
+
+    connection.commit()
+    connection.close()
+
+
+    return jsonify({
+
+        "success": True,
+
+        "message":
+            "Profile image uploaded successfully.",
+
+        "avatarUrl":
+            avatar_url
     })
