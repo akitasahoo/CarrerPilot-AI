@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerPilot AI - AI-Powered Career Development Platform</title>
+    
+    <!-- Meta Descriptions & SEO -->
+    <meta name="description" content="CareerPilot AI - Build ATS-optimized resumes, practice AI mock interviews, track career readiness, and accelerate your job search.">
+    <meta name="keywords" content="Resume Builder, AI Mock Interview, ATS Resume Checker, Career Readiness, Job Search, AI Career Coach">
+    
+    <!-- Google Fonts: Inter & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome & Lucide Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- html2pdf.js CDN for Resume PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- QRCode.js CDN for Public Profile Sharing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Canvas Confetti CDN for Celebratory Animations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Main Application Stylesheet -->
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+
+    <!-- Ambient Animated Background Blobs -->
+    <div class="ambient-blob blob-1"></div>
+    <div class="ambient-blob blob-2"></div>
+    <div class="ambient-blob blob-3"></div>
+
+    <div id="app" class="app-container">
+
+        <!-- ================= FULL-SCREEN AUTH GATEWAY ================= -->
+        <div id="authGatewayView" class="auth-gateway-wrapper">
+            <div class="auth-gateway-card glass-panel">
+                <div class="auth-brand-header">
+                    <div class="logo-icon large">
+                        <i class="fa-solid fa-compass-drafting"></i>
+                    </div>
+                    <h2>Welcome to CareerPilot <span class="logo-accent">AI</span></h2>
+                    <p>Your all-in-one AI career development, resume optimization & mock interview platform.</p>
+                </div>
+
+                <div class="auth-quick-demo-box">
+                    <span class="demo-label">⚡ Quick Demo Access:</span>
+                    <div class="demo-buttons-row">
+                        <button class="btn btn-outline btn-sm" onclick="app.loginDemoUser('jobseeker')">
+                            <i class="fa-solid fa-user"></i> Login as Job Seeker
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="app.loginDemoUser('admin')">
+                            <i class="fa-solid fa-user-shield"></i> Login as Admin
+                        </button>
+                    </div>
+                </div>
+
+                <div class="divider-text">OR SIGN IN WITH EMAIL</div>
+
+                <form id="gatewayAuthForm" onsubmit="event.preventDefault(); app.handleGatewayAuth();">
+                    <div class="form-group" id="gatewayNameGroup" style="display: none;">
+                        <label>Full Name</label>
+                        <input type="text" id="gatewayName" class="form-control" placeholder="e.g. Alex Johnson">
+                    </div>
+                    <div class="form-group" id="gatewayGenderGroup" style="display: none;">
+                        <label>Gender (Select Avatar)</label>
+                        <select id="gatewayGender" class="form-control">
+                            <option value="female">👩 Female Candidate Avatar</option>
+                            <option value="male">👨 Male Candidate Avatar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="gatewayEmail" class="form-control" placeholder="alex.johnson@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="gatewayPassword" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full btn-lg" id="gatewaySubmitBtn">
+                        Sign In to Account <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="auth-toggle-footer">
+                    <span id="gatewayToggleText">Don't have an account?</span>
+                    <button class="btn-text" id="gatewayToggleBtn" onclick="app.toggleGatewayAuthMode()">Create New Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= NAVBAR ================= -->
+        <header class="navbar" id="appNavbar" style="display: none;">
+            <div class="nav-brand">
+                <a href="#dashboard" class="brand-logo" onclick="app.navigateTo('dashboard')">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-compass-drafting"></i>
+                    </div>
+                    <span class="logo-text">CareerPilot <span class="logo-accent">AI</span></span>
+                </a>
+            </div>
+
+            <div class="nav-actions">
+                <!-- Theme Toggle Button -->
+                <button class="icon-btn" id="themeToggleBtn" title="Toggle Light/Dark Theme" onclick="app.toggleTheme()">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+
+                <!-- Notifications Dropdown -->
+                <div class="notifications-dropdown-container">
+                    <button class="icon-btn" id="notifBellBtn" title="Notifications" onclick="app.toggleNotifications()">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notification-badge" id="notifBadge">3</span>
+                    </button>
+                    
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <h3><i class="fa-solid fa-bell"></i> Notifications</h3>
+                            <button class="btn-text" onclick="app.clearNotifications()">Clear All</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Profile / Auth Area -->
+                <div id="userNavArea">
+                    <!-- User avatar, name, and logout rendered dynamically -->
+                </div>
+            </div>
+        </header>
+
+        <!-- ================= MAIN CONTENT WRAPPER ================= -->
+        <div class="main-layout">
+            
+            <!-- Sidebar for Mobile/Compact Desktop Navigation -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-nav">
+                    <a href="javascript:void(0)" class="sidebar-item active" data-view="dashboard" onclick="app.navigateTo('dashboard')">
+                        <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
+                    </a>
+                    <a href="javascript:void(0)" class="sidebar-item" data-view="profile" onclick="app.navigateTo('profile')">
+                        <i class="fa-solid fa-user-gear"></i> <span>Profile Hub</span>
+                    </a>
+                    <a href="javascript:void(0)" class="sidebar-item" data-view="builder" onclick="app.navigateTo('builder')">
+                        <i class="fa-solid fa-file-invoice"></i> <span>AI Resume Builder</span>
+                    </a>
+                    <a href="javascript:void(0)" class="sidebar-item" data-view="analyzer" onclick="app.navigateTo('analyzer')">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i> <span>ATS Resume Analyzer</span>
+                    </a>
+                    <a href="javascript:void(0)" class="sidebar-item" data-view="interview" onclick="app.navigateTo('interview')">
+                        <i class="fa-solid fa-comments"></i> <span>AI Mock Interview</span>
+                    </a>
+                    <a href="javascript:void(0)" class="sidebar-item" id="sidebarPublicLink" onclick="app.openPublicProfileModal()">
+                        <i class="fa-solid fa-share-nodes"></i> <span>Public Profile Link</span>
+                    </a>
+                    <a href="javascript:void(0)" class="sidebar-item admin-only" id="sidebarAdminLink" onclick="app.navigateTo('admin')" style="display: none;">
+                        <i class="fa-solid fa-user-shield"></i> <span>Admin Control Panel</span>
+                    </a>
+                </div>
+
+                <div class="sidebar-footer">
+                    <div class="readiness-mini-card">
+                        <div class="mini-card-header">
+                            <span>Career Readiness</span>
+                            <strong id="sidebarReadinessScore">82%</strong>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="sidebarReadinessFill" style="width: 82%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Content Area Views -->
+            <main class="content-area" id="contentArea">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <section class="view-panel active" id="view-dashboard">
+                    <div class="view-header">
+                        <div>
+                            <h1 class="view-title">Welcome back, <span id="dashGreetingName">John</span>! 👋</h1>
+                            <p class="view-subtitle">Here is your AI career readiness diagnosis, ATS resume stats, and interview performance overview.</p>
+                        </div>
+                        <div class="view-header-actions">
+                            <button class="btn btn-secondary" onclick="app.navigateTo('profile')">
+                                <i class="fa-solid fa-pen-to-square"></i> Update Profile
+                            </button>
+                            <button class="btn btn-primary" onclick="app.navigateTo('builder')">
+                                <i class="fa-solid fa-plus"></i> New AI Resume
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Readiness & Stat Summary Cards -->
+                    <div class="dashboard-stats-grid">
+                        <div class="stat-card main-stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-blue">
+                                <i class="fa-solid fa-rocket"></i>
+                            </div>
+                            <div class="stat-details">
+                                <span class="stat-label">Career Readiness Index</span>
+                                <div class="stat-value-group">
+                                    <span class="stat-number" id="dashReadinessScore">84%</span>
+                                    <span class="stat-badge positive"><i class="fa-solid fa-arrow-trend-up"></i> +6% this week</span>
+                                </div>
+                            </div>
+                            <div class="stat-mini-chart">
+                                <canvas id="readinessDoughnutChart" width="80" height="80"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-emerald">
+                                <i class="fa-solid fa-file-circle-check"></i>
+                            </div>
+                            <div class="stat-details">
+                                <span class="stat-label">Latest ATS Resume Score</span>
+                                <div class="stat-value-group">
+                                    <span class="stat-number" id="dashAtsScore">88/100</span>
+                                </div>
+                                <p class="stat-subtext">ATS Compatible & Optimized</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-purple">
+                                <i class="fa-solid fa-headset"></i>
+                            </div>
+                            <div class="stat-details">
+                                <span class="stat-label">Avg Interview Score</span>
+                                <div class="stat-value-group">
+                                    <span class="stat-number" id="dashInterviewScore">81%</span>
+                                </div>
+                                <p class="stat-subtext">3 Practice Sessions Completed</p>
+                            </div>
+                        </div>
+
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-amber">
+                                <i class="fa-solid fa-eye"></i>
+                            </div>
+                            <div class="stat-details">
+                                <span class="stat-label">Public Profile Views</span>
+                                <div class="stat-value-group">
+                                    <span class="stat-number" id="dashViewsCount">142</span>
+                                </div>
+                                <p class="stat-subtext">Recruiters & Visitors</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Grid -->
+                    <div class="dashboard-charts-grid">
+                        <div class="chart-card glass-panel col-span-2">
+                            <div class="chart-card-header">
+                                <h3><i class="fa-solid fa-chart-line"></i> Career Progress & ATS Score Trend</h3>
+                                <div class="time-filter">
+                                    <span class="badge active">Last 30 Days</span>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="atsTrendChart" height="240"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-card glass-panel">
+                            <div class="chart-card-header">
+                                <h3><i class="fa-solid fa-chart-radar"></i> Skill Proficiency Matrix</h3>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="skillRadarChart" height="240"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations & Goals -->
+                    <div class="dashboard-bottom-grid">
+                        <div class="glass-panel card-section">
+                            <div class="section-title-row">
+                                <h3><i class="fa-solid fa-lightbulb"></i> AI Career Recommendations</h3>
+                                <span class="badge badge-info">Powered by Gemini AI</span>
+                            </div>
+                            <div class="recommendations-list" id="dashRecommendationsList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="glass-panel card-section">
+                            <div class="section-title-row">
+                                <h3><i class="fa-solid fa-bullseye"></i> Upcoming Career Goals</h3>
+                                <button class="btn-icon-sm" onclick="dashboard.addGoalModal()"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="goals-list" id="dashGoalsList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="glass-panel card-section">
+                            <div class="section-title-row">
+                                <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity Log</h3>
+                            </div>
+                            <div class="activity-timeline" id="dashActivityLog">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. PROFILE HUB VIEW -->
+                <section class="view-panel" id="view-profile">
+                    <div class="view-header">
+                        <div>
+                            <h1 class="view-title">Professional Profile Hub 👤</h1>
+                            <p class="view-subtitle">Manage your personal information, education, skills, projects, and work experiences. This feeds directly into the AI Resume Builder and ATS Analyzer.</p>
+                        </div>
+                        <div class="view-header-actions">
+                            <button class="btn btn-outline" onclick="profileManager.loadDemoData()">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Load Sample Data
+                            </button>
+                            <button class="btn btn-primary" onclick="profileManager.saveProfile()">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Profile Changes
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="profile-completeness-banner glass-panel">
+                        <div class="completeness-info">
+                            <i class="fa-solid fa-circle-check completeness-icon"></i>
+                            <div>
+                                <h4>Profile Completeness: <strong id="profileCompletenessPercent">85%</strong></h4>
+                                <p id="profileCompletenessTip">Add 2 more projects and a certification to reach 100% and boost your ATS ranking!</p>
+                            </div>
+                        </div>
+                        <div class="progress-bar-container large">
+                            <div class="progress-bar-fill" id="profileCompletenessFill" style="width: 85%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Form Tabs -->
+                    <div class="profile-tabs-wrapper">
+                        <div class="profile-tabs">
+                            <button class="profile-tab-btn active" onclick="profileManager.switchTab('personal')"><i class="fa-solid fa-user"></i> Personal Info</button>
+                            <button class="profile-tab-btn" onclick="profileManager.switchTab('education')"><i class="fa-solid fa-graduation-cap"></i> Education</button>
+                            <button class="profile-tab-btn" onclick="profileManager.switchTab('skills')"><i class="fa-solid fa-code"></i> Skills & Proficiency</button>
+                            <button class="profile-tab-btn" onclick="profileManager.switchTab('projects')"><i class="fa-solid fa-diagram-project"></i> Projects</button>
+                            <button class="profile-tab-btn" onclick="profileManager.switchTab('experience')"><i class="fa-solid fa-briefcase"></i> Experience</button>
+                            <button class="profile-tab-btn" onclick="profileManager.switchTab('extra')"><i class="fa-solid fa-award"></i> Certs & Achievements</button>
+                        </div>
+
+                        <form id="profileForm" onsubmit="event.preventDefault(); profileManager.saveProfile();">
+                            
+                            <!-- TAB 1: Personal Info -->
+                            <div class="profile-tab-content active" id="tab-personal">
+                                <div class="form-grid">
+                                    <div class="form-group col-span-2 avatar-upload-section">
+                                        <label>Account Avatar & Gender Preset</label>
+                                        <div class="gender-avatar-picker-row">
+                                            <div class="avatar-option-card" id="avatarOptFemale" onclick="profileManager.selectGender('female')">
+                                                <img src="/static/images/avatar-female.svg" class="avatar-preview-img" alt="Female Avatar">
+                                                <span>👩 Female Candidate</span>
+                                            </div>
+                                            <div class="avatar-option-card" id="avatarOptMale" onclick="profileManager.selectGender('male')">
+                                                <img src="/static/images/avatar-male.svg" class="avatar-preview-img" alt="Male Avatar">
+                                                <span>👨 Male Candidate</span>
+                                            </div>
+                                            <div class="avatar-option-card disabled" id="avatarOptAdmin" title="System Administrator Avatar (Auto-assigned to Admin accounts)">
+                                                <img src="/static/images/avatar-admin.svg" class="avatar-preview-img" alt="Admin Avatar">
+                                                <span>🛡️ Admin Account</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label>Full Name *</label>
+                                        <input type="text" id="profFullName" class="form-control" placeholder="e.g. Alex Johnson" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email Address *</label>
+                                        <input type="email" id="profEmail" class="form-control" placeholder="alex.johnson@email.com" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Phone Number</label>
+                                        <input type="tel" id="profPhone" class="form-control" placeholder="+1 (555) 234-5678">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Location / Address</label>
+                                        <input type="text" id="profLocation" class="form-control" placeholder="San Francisco, CA">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>LinkedIn Profile URL</label>
+                                        <input type="url" id="profLinkedin" class="form-control" placeholder="https://linkedin.com/in/alexjohnson">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>GitHub Profile URL</label>
+                                        <input type="url" id="profGithub" class="form-control" placeholder="https://github.com/alexjohnson">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Portfolio / Personal Website</label>
+                                        <input type="url" id="profWebsite" class="form-control" placeholder="https://alexjohnson.dev">
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label>Career Objective / Executive Summary</label>
+                                        <textarea id="profObjective" class="form-control" rows="4" placeholder="Dedicated Software Engineering student with experience in Full-Stack JavaScript, React, and Python Flask. Passionate about building AI-driven web applications..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: Education -->
+                            <div class="profile-tab-content" id="tab-education">
+                                <div class="dynamic-section-header">
+                                    <h3>Educational Background</h3>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="profileManager.addEducationField()">
+                                        <i class="fa-solid fa-plus"></i> Add Education
+                                    </button>
+                                </div>
+                                <div id="educationListContainer">
+                                    <!-- Dynamic fields inserted here -->
+                                </div>
+                            </div>
+
+                            <!-- TAB 3: Skills -->
+                            <div class="profile-tab-content" id="tab-skills">
+                                <div class="form-group">
+                                    <label>Technical & Soft Skills (Comma separated or add tag)</label>
+                                    <div class="skill-input-row">
+                                        <input type="text" id="skillInput" class="form-control" placeholder="e.g. Python, React, JavaScript, SQL, AWS, Communication">
+                                        <button type="button" class="btn btn-primary" onclick="profileManager.addSkillTag()">Add Skill</button>
+                                    </div>
+                                    <div class="skills-tags-container" id="skillsTagsContainer">
+                                        <!-- Skill pills render here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 4: Projects -->
+                            <div class="profile-tab-content" id="tab-projects">
+                                <div class="dynamic-section-header">
+                                    <h3>Key Portfolio Projects</h3>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="profileManager.addProjectField()">
+                                        <i class="fa-solid fa-plus"></i> Add Project
+                                    </button>
+                                </div>
+                                <div id="projectsListContainer">
+                                    <!-- Dynamic fields inserted here -->
+                                </div>
+                            </div>
+
+                            <!-- TAB 5: Work Experience -->
+                            <div class="profile-tab-content" id="tab-experience">
+                                <div class="dynamic-section-header">
+                                    <h3>Work & Internship Experience</h3>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="profileManager.addExperienceField()">
+                                        <i class="fa-solid fa-plus"></i> Add Experience
+                                    </button>
+                                </div>
+                                <div id="experienceListContainer">
+                                    <!-- Dynamic fields inserted here -->
+                                </div>
+                            </div>
+
+                            <!-- TAB 6: Extra (Certs, Achievements, Languages, Interests) -->
+                            <div class="profile-tab-content" id="tab-extra">
+                                <div class="form-grid">
+                                    <div class="form-group col-span-2">
+                                        <label>Certifications (One per line)</label>
+                                        <textarea id="profCertifications" class="form-control" rows="3" placeholder="AWS Certified Developer - Associate (2024)&#10;Meta Front-End Developer Professional Certificate"></textarea>
+                                    </div>
+                                    <div class="form-group col-span-2">
+                                        <label>Honors & Achievements</label>
+                                        <textarea id="profAchievements" class="form-control" rows="3" placeholder="1st Place - University Hackathon 2024&#10;Dean's Honor List (2022-2024)"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Languages Spoken</label>
+                                        <input type="text" id="profLanguages" class="form-control" placeholder="English (Fluent), Spanish (Intermediate)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Interests & Hobbies</label>
+                                        <input type="text" id="profInterests" class="form-control" placeholder="Open-Source AI, Competitive Programming, Chess">
+                                    </div>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </section>
+
+                <!-- 3. RESUME BUILDER VIEW -->
+                <section class="view-panel" id="view-builder">
+                    <div class="view-header">
+                        <div>
+                            <h1 class="view-title">AI Resume Builder & Export Studio 📄</h1>
+                            <p class="view-subtitle">Select modern ATS-friendly templates, customize styles, use AI bullet point enhancers, and export clean PDF resumes.</p>
+                        </div>
+                        <div class="view-header-actions">
+                            <button class="btn btn-secondary" onclick="resumeBuilder.enhanceWithAI()">
+                                <i class="fa-solid fa-wand-magic-sparkles text-amber"></i> AI Enhance Bullet Points
+                            </button>
+                            <button class="btn btn-outline" onclick="resumeBuilder.printResume()">
+                                <i class="fa-solid fa-print"></i> Print
+                            </button>
+                            <button class="btn btn-primary" onclick="resumeBuilder.exportPDF()">
+                                <i class="fa-solid fa-download"></i> Export PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="builder-workspace">
+                        
+                        <!-- Builder Controls Panel -->
+                        <div class="builder-controls glass-panel">
+                            <div class="builder-tab-row">
+                                <button class="builder-tab-btn active" id="builderTabAiBtn" onclick="resumeBuilder.switchControlTab('ai')">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-amber"></i> AI Generator
+                                </button>
+                                <button class="builder-tab-btn" id="builderTabDesignBtn" onclick="resumeBuilder.switchControlTab('design')">
+                                    <i class="fa-solid fa-palette"></i> Design
+                                </button>
+                                <button class="builder-tab-btn" id="builderTabEditBtn" onclick="resumeBuilder.switchControlTab('edit')">
+                                    <i class="fa-solid fa-pen-to-square"></i> Direct Editor
+                                </button>
+                            </div>
+
+                            <!-- TAB 1: AI RESUME AUTO-GENERATOR -->
+                            <div class="builder-tab-pane active" id="builderPaneAi">
+                                <div class="ai-generator-card-box">
+                                    <h4><i class="fa-solid fa-robot text-indigo"></i> Generate Full Resume with AI</h4>
+                                    <p class="ai-box-desc">Enter your target job title and let Gemini AI draft an entire ATS-optimized resume tailored specifically for your target role.</p>
+
+                                    <div class="form-group" style="margin-top: 0.75rem;">
+                                        <label>Target Job Title</label>
+                                        <input type="text" id="aiGenTargetRole" class="form-control" placeholder="e.g. Senior Full Stack Engineer / Data Scientist" value="Software Engineer">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Experience Level</label>
+                                        <select id="aiGenExpLevel" class="form-control">
+                                            <option value="Entry-Level / Junior">Entry-Level / Junior</option>
+                                            <option value="Mid-Level" selected>Mid-Level</option>
+                                            <option value="Senior Executive">Senior Executive</option>
+                                        </select>
+                                    </div>
+
+                                    <button class="btn btn-primary btn-full btn-lg" style="margin-top: 0.85rem;" onclick="resumeBuilder.generateWithAI()">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generate Resume with AI
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- TAB 2: DESIGN & TEMPLATES -->
+                            <div class="builder-tab-pane" id="builderPaneDesign" style="display: none;">
+                                <!-- Template Selector -->
+                                <div class="control-group">
+                                    <label>4 Distinct Templates</label>
+                                    <div class="template-selector-grid">
+                                        <div class="template-option active" data-template="modern" onclick="resumeBuilder.selectTemplate('modern')">
+                                            <div class="template-preview-box t-modern"></div>
+                                            <span>1. Tech Modern</span>
+                                        </div>
+                                        <div class="template-option" data-template="executive" onclick="resumeBuilder.selectTemplate('executive')">
+                                            <div class="template-preview-box t-executive"></div>
+                                            <span>2. Executive Minimal</span>
+                                        </div>
+                                        <div class="template-option" data-template="creative" onclick="resumeBuilder.selectTemplate('creative')">
+                                            <div class="template-preview-box t-creative"></div>
+                                            <span>3. Creative Dark Banner</span>
+                                        </div>
+                                        <div class="template-option" data-template="compact" onclick="resumeBuilder.selectTemplate('compact')">
+                                            <div class="template-preview-box t-compact"></div>
+                                            <span>4. Compact 2-Column</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Color Palette -->
+                                <div class="control-group">
+                                    <label>Accent Color</label>
+                                    <div class="color-palette-picker">
+                                        <span class="color-dot active" style="background: #4f46e5;" onclick="resumeBuilder.setColor('#4f46e5')"></span>
+                                        <span class="color-dot" style="background: #0284c7;" onclick="resumeBuilder.setColor('#0284c7')"></span>
+                                        <span class="color-dot" style="background: #059669;" onclick="resumeBuilder.setColor('#059669')"></span>
+                                        <span class="color-dot" style="background: #e11d48;" onclick="resumeBuilder.setColor('#e11d48')"></span>
+                                        <span class="color-dot" style="background: #7c3aed;" onclick="resumeBuilder.setColor('#7c3aed')"></span>
+                                        <span class="color-dot" style="background: #0f172a;" onclick="resumeBuilder.setColor('#0f172a')"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Font Selector -->
+                                <div class="control-group">
+                                    <label>Typography Font</label>
+                                    <select id="builderFontSelect" class="form-control" onchange="resumeBuilder.setFont(this.value)">
+                                        <option value="'Inter', sans-serif">Inter (Modern Clean)</option>
+                                        <option value="'Outfit', sans-serif">Outfit (SaaS Modern)</option>
+                                        <option value="'Roboto', sans-serif">Roboto (Standard ATS)</option>
+                                        <option value="Georgia, serif">Georgia (Classic Executive)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Section Visibility Toggles -->
+                                <div class="control-group">
+                                    <label>Section Controls</label>
+                                    <div class="section-toggles-list">
+                                        <label class="checkbox-label"><input type="checkbox" id="toggleSummary" checked onchange="resumeBuilder.renderPreview()"> Objective Summary</label>
+                                        <label class="checkbox-label"><input type="checkbox" id="toggleEducation" checked onchange="resumeBuilder.renderPreview()"> Education</label>
+                                        <label class="checkbox-label"><input type="checkbox" id="toggleSkills" checked onchange="resumeBuilder.renderPreview()"> Skills</label>
+                                        <label class="checkbox-label"><input type="checkbox" id="toggleProjects" checked onchange="resumeBuilder.renderPreview()"> Key Projects</label>
+                                        <label class="checkbox-label"><input type="checkbox" id="toggleExperience" checked onchange="resumeBuilder.renderPreview()"> Work Experience</label>
+                                        <label class="checkbox-label"><input type="checkbox" id="toggleCerts" checked onchange="resumeBuilder.renderPreview()"> Certifications</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TAB 2: DIRECT RESUME CONTENT EDITOR (Isolated from Profile Hub) -->
+                            <div class="builder-tab-pane" id="builderPaneEdit" style="display: none;">
+                                <div class="isolated-edit-notice">
+                                    <i class="fa-solid fa-lock text-amber"></i> Edits here stay in the resume draft only and won't alter your Profile Hub!
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Full Name</label>
+                                    <input type="text" id="resEditName" class="form-control" oninput="resumeBuilder.updateResumeField('fullName', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Professional Title</label>
+                                    <input type="text" id="resEditHeadline" class="form-control" oninput="resumeBuilder.updateResumeField('headline', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email Address</label>
+                                    <input type="email" id="resEditEmail" class="form-control" oninput="resumeBuilder.updateResumeField('email', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone Number</label>
+                                    <input type="text" id="resEditPhone" class="form-control" oninput="resumeBuilder.updateResumeField('phone', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Location</label>
+                                    <input type="text" id="resEditLocation" class="form-control" oninput="resumeBuilder.updateResumeField('location', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>Executive Summary</label>
+                                    <textarea id="resEditSummary" class="form-control" rows="3" oninput="resumeBuilder.updateResumeField('objective', this.value)"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>Technical Skills (comma-separated)</label>
+                                    <input type="text" id="resEditSkills" class="form-control" oninput="resumeBuilder.updateResumeSkills(this.value)">
+                                </div>
+
+                                <button class="btn btn-outline btn-sm btn-full" style="margin-top: 0.5rem;" onclick="resumeBuilder.syncFromProfile()">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset from Profile Hub
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live Resume Render Preview Container -->
+                        <div class="builder-preview-wrapper">
+                            <div class="resume-paper-container" id="resumePaper">
+                                <!-- Rendered dynamically by resumeBuilder.js -->
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- 4. ATS RESUME ANALYZER VIEW (PLACEHOLDER) -->
+                <section class="view-panel" id="view-analyzer">
+                    <div class="view-header">
+                        <div>
+                            <h1 class="view-title">AI ATS Resume Analyzer 🎯</h1>
+                            <p class="view-subtitle">Instant ATS compatibility scoring and keyword match analysis.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel placeholder-feature-card">
+                        <div class="placeholder-icon-wrapper">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                        <h2>ATS Resume Analyzer Under Maintenance</h2>
+                        <p>This module is currently undergoing system updates and will be re-enabled in an upcoming release.</p>
+                        <span class="badge badge-purple">Coming Soon</span>
+                    </div>
+                </section>
+
+                <!-- 5. AI MOCK INTERVIEW STUDIO VIEW (PLACEHOLDER) -->
+                <section class="view-panel" id="view-interview">
+                    <div class="view-header">
+                        <div>
+                            <h1 class="view-title">AI Mock Interview Studio 🎙️</h1>
+                            <p class="view-subtitle">Interactive AI voice interview practice and STAR method evaluation.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel placeholder-feature-card">
+                        <div class="placeholder-icon-wrapper" style="background: rgba(244, 63, 94, 0.1); color: var(--accent-rose);">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                        </div>
+                        <h2>AI Mock Interview Studio Under Maintenance</h2>
+                        <p>This feature is temporarily offline for scheduled performance enhancements. Check back soon!</p>
+                        <span class="badge badge-rose">Coming Soon</span>
+                    </div>
+                </section>
+
+                <!-- 6. ADMIN CONTROL PANEL VIEW -->
+                <section class="view-panel" id="view-admin">
+                    <div class="view-header">
+                        <div>
+                            <h1 class="view-title">Platform Admin Control Panel 🛡️</h1>
+                            <p class="view-subtitle">System analytics, user management, resume statistics, and AI token monitoring.</p>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-stats-grid">
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-blue"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-label">Total Registered Users</span>
+                                <span class="stat-number" id="admTotalUsers">1,248</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-emerald"><i class="fa-solid fa-file-invoice"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-label">Resumes Built</span>
+                                <span class="stat-number" id="admResumesBuilt">3,892</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-purple"><i class="fa-solid fa-headset"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-label">Mock Interviews Held</span>
+                                <span class="stat-number" id="admInterviewsHeld">940</span>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-panel">
+                            <div class="stat-icon-wrapper gradient-amber"><i class="fa-solid fa-microchip"></i></div>
+                            <div class="stat-details">
+                                <span class="stat-label">AI Token Calls</span>
+                                <span class="stat-number" id="admAiTokens">48,210</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel card-section">
+                        <div class="section-title-row">
+                            <h3><i class="fa-solid fa-users-gear"></i> User Database Management</h3>
+                            <input type="text" id="adminUserSearch" class="form-control form-control-sm" placeholder="Search user..." onkeyup="adminPanel.filterUsers()">
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>ATS Score</th>
+                                        <th>Interviews</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminUserTableBody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- ================= AUTH MODAL ================= -->
+        <div class="modal-overlay" id="authModal">
+            <div class="modal-card glass-panel">
+                <button class="modal-close" onclick="app.closeAuthModal()"><i class="fa-solid fa-xmark"></i></button>
+                
+                <div class="modal-header">
+                    <h2 id="authModalTitle">Sign In to CareerPilot AI</h2>
+                    <p id="authModalSubtitle">Access your saved resumes, interview history, and public profile.</p>
+                </div>
+
+                <div class="demo-account-buttons">
+                    <button class="btn btn-outline btn-sm btn-full" onclick="app.loginDemoUser('jobseeker')">
+                        <i class="fa-solid fa-user"></i> Quick Login as Demo Student
+                    </button>
+                    <button class="btn btn-outline btn-sm btn-full" onclick="app.loginDemoUser('admin')">
+                        <i class="fa-solid fa-user-shield"></i> Quick Login as System Admin
+                    </button>
+                </div>
+
+                <div class="divider-text">OR ENTER CREDENTIALS</div>
+
+                <form id="authForm" onsubmit="event.preventDefault(); app.handleAuthSubmit();">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="authEmail" class="form-control" placeholder="name@domain.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="authPassword" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <div id="authSignupFields" style="display: none;">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="authName" class="form-control" placeholder="John Doe">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full btn-lg" id="authSubmitBtn">Sign In</button>
+                </form>
+
+                <div class="auth-toggle-footer">
+                    <span id="authToggleText">Don't have an account?</span>
+                    <button class="btn-text" id="authToggleBtn" onclick="app.toggleAuthMode()">Create Account</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= GLOBAL TOAST CONTAINER ================= -->
+        <div class="toast-container" id="toastContainer"></div>
+
+    </div>
+
+    <!-- Application Script Modules -->
+    <script src="static/js/app.js"></script>
+    <script src="static/js/profileManager.js"></script>
+    <script src="static/js/resumeBuilder.js"></script>
+    <script src="static/js/resumeAnalyzer.js"></script>
+    <script src="static/js/mockInterview.js"></script>
+    <script src="static/js/dashboard.js"></script>
+    <script src="static/js/adminPanel.js"></script>
+</body>
+</html>

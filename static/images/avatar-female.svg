@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="femaleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <circle cx="64" cy="64" r="64" fill="url(#femaleBg)"/>
+  <!-- Outer Ring Accent -->
+  <circle cx="64" cy="64" r="61" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+  
+  <!-- Long Hair Background -->
+  <path d="M 36 45 C 34 85 45 95 45 95 L 83 95 C 83 95 94 85 92 45 Z" fill="#1e1b4b"/>
+
+  <!-- Female Blazer / Attire -->
+  <path d="M 24 118 C 24 92 42 82 64 82 C 86 82 104 92 104 118 Z" fill="#312e81"/>
+  <!-- Blouse V-Neck -->
+  <polygon points="53,82 64,102 75,82" fill="#ffffff"/>
+
+  <!-- Neck -->
+  <rect x="56" y="66" width="16" height="18" fill="#f8fafc" rx="3"/>
+
+  <!-- Head / Face -->
+  <ellipse cx="64" cy="52" rx="21" ry="24" fill="#ffffff"/>
+  
+  <!-- Professional Female Hairstyling -->
+  <path d="M 39 48 C 39 28 50 22 64 22 C 78 22 89 28 89 48 C 84 35 76 29 64 29 C 52 29 44 35 39 48 Z" fill="#1e1b4b"/>
+  <path d="M 40 45 C 45 32 55 35 64 35 C 73 35 83 32 88 45 C 86 40 76 31 64 31 C 52 31 42 40 40 45 Z" fill="#312e81"/>
+
+  <!-- Eyes -->
+  <circle cx="55" cy="50" r="2.5" fill="#334155"/>
+  <circle cx="73" cy="50" r="2.5" fill="#334155"/>
+  <!-- Smile -->
+  <path d="M 57 61 Q 64 66 71 61" stroke="#e11d48" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerPilot AI - Professional Public Profile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body class="public-profile-body">
+
+    <div class="public-profile-header-bar">
+        <div class="brand">
+            <i class="fa-solid fa-compass-drafting"></i>
+            <span>CareerPilot <strong>AI Profile</strong></span>
+        </div>
+        <div class="public-actions">
+            <button class="btn btn-outline btn-sm" onclick="downloadPublicPDF()">
+                <i class="fa-solid fa-download"></i> Download Resume PDF
+            </button>
+            <a href="index.html" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-rocket"></i> Build Your Own AI Resume
+            </a>
+        </div>
+    </div>
+
+    <div class="public-profile-container">
+        <div class="public-hero-card glass-panel">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=John" alt="Avatar" class="public-avatar" id="pubAvatar">
+            <div class="public-hero-info">
+                <h1 id="pubFullName">Alex Johnson</h1>
+                <p class="pub-title" id="pubTitle">Software Engineer & Full Stack Developer</p>
+                <div class="pub-meta-row" id="pubMetaRow">
+                    <span><i class="fa-solid fa-location-dot"></i> San Francisco, CA</span>
+                    <span><i class="fa-solid fa-envelope"></i> alex.johnson@email.com</span>
+                    <span><i class="fa-brands fa-linkedin"></i> linkedin.com/in/alexjohnson</span>
+                    <span><i class="fa-brands fa-github"></i> github.com/alexjohnson</span>
+                </div>
+            </div>
+            <div class="public-qr-box">
+                <div id="pubQrContainer"></div>
+                <small>Scan for Mobile View</small>
+            </div>
+        </div>
+
+        <div class="public-content-grid">
+            <div class="glass-panel card-section">
+                <h3><i class="fa-solid fa-user-gear"></i> Executive Objective</h3>
+                <p id="pubObjective" class="pub-summary">Dedicated Software Engineering student with strong foundation in Python Flask, React, and Machine Learning. Proven track record of building production-ready AI applications and algorithms.</p>
+            </div>
+
+            <div class="glass-panel card-section">
+                <h3><i class="fa-solid fa-code text-blue"></i> Technical Skills</h3>
+                <div id="pubSkillsContainer" class="skills-tags-container">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="glass-panel card-section col-span-2">
+                <h3><i class="fa-solid fa-diagram-project text-emerald"></i> Key Featured Projects</h3>
+                <div id="pubProjectsContainer" class="public-projects-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="glass-panel card-section">
+                <h3><i class="fa-solid fa-briefcase text-purple"></i> Work Experience</h3>
+                <div id="pubExperienceContainer" class="public-timeline">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <div class="glass-panel card-section">
+                <h3><i class="fa-solid fa-graduation-cap text-amber"></i> Education</h3>
+                <div id="pubEducationContainer" class="public-timeline">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inline Loader script for public shareable profile page
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileData = JSON.parse(localStorage.getItem('careerpilot_profile') || '{}') || {
+                fullName: 'Alex Johnson',
+                email: 'alex.johnson@email.com',
+                location: 'San Francisco, CA',
+                linkedin: 'https://linkedin.com/in/alexjohnson',
+                github: 'https://github.com/alexjohnson',
+                objective: 'Dedicated Software Engineering student with strong foundation in Python Flask, React, and Machine Learning.',
+                skills: ['Python', 'React', 'JavaScript', 'Flask', 'SQL', 'Git', 'REST APIs', 'AWS'],
+                projects: [
+                    { title: 'CareerPilot AI', description: 'All-in-one AI career development platform built with Python Flask and modern JS.', tech: 'Python, Flask, JavaScript, Chart.js', github: '#' },
+                    { title: 'Smart Financial Tracker', description: 'Automated expense tracking with ML insights and visualization.', tech: 'React, Node.js, MongoDB', github: '#' }
+                ],
+                education: [
+                    { degree: 'B.S. in Computer Science', institution: 'University of Technology', duration: '2021 - 2025', cgpa: '3.85 / 4.0' }
+                ],
+                experience: [
+                    { role: 'Software Engineering Intern', company: 'TechCorp Solutions', duration: 'Jun 2024 - Aug 2024', description: 'Optimized backend database queries by 35% and developed microservices.' }
+                ]
+            };
+
+            document.getElementById('pubFullName').textContent = profileData.fullName || 'Alex Johnson';
+            document.getElementById('pubObjective').textContent = profileData.objective || '';
+            
+            // Skills
+            const skillsBox = document.getElementById('pubSkillsContainer');
+            skillsBox.innerHTML = (profileData.skills || ['Python', 'JavaScript', 'React', 'Flask', 'SQL']).map(s => `<span class="skill-tag">${s}</span>`).join('');
+
+            // Projects
+            const projectsBox = document.getElementById('pubProjectsContainer');
+            projectsBox.innerHTML = (profileData.projects || []).map(p => `
+                <div class="pub-project-card">
+                    <h4>${p.title}</h4>
+                    <p>${p.description}</p>
+                    <small><strong>Tech Stack:</strong> ${p.tech}</small>
+                </div>
+            `).join('');
+
+            // QR Code
+            new QRCode(document.getElementById("pubQrContainer"), {
+                text: window.location.href,
+                width: 80,
+                height: 80
+            });
+        });
+
+        function downloadPublicPDF() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
