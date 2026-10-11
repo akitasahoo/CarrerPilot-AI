@@ -1,15 +1,21 @@
 from flask import Flask, render_template, session, redirect, url_for
-
+import os
+from dotenv import load_dotenv
 from routes.auth import auth
 from models.database import get_db_connection
 from routes.resume import resume
 
 
 
+load_dotenv()
+
 app = Flask(__name__)
 
 # Session secret key
-app.secret_key = "careerpilot-secret-key"
+app.secret_key = os.getenv("SECRET_KEY")
+
+if not app.secret_key:
+    raise RuntimeError("SECRET_KEY is missing from the .env file.")
 
 # Register authentication API routes
 app.register_blueprint(auth)

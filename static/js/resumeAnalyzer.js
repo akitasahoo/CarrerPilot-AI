@@ -1,6 +1,8 @@
-/**
- * CareerPilot AI - AI ATS Resume Analyzer (resumeAnalyzer.js)
- * Parses uploaded resume files/text, calculates ATS metrics, renders Chart.js graphics & missing skills.
+
+/*
+ * CareerPilot AI - AI ATS Resume Analyzer
+ * Supports PDF, DOCX, TXT and profile-text analysis.
+ * Uses the Flask backend and Groq AI for real ATS analysis.
  */
 
 class ResumeAnalyzer {
@@ -9,199 +11,359 @@ class ResumeAnalyzer {
         this.doughnutChart = null;
     }
 
-initATSForm() {
-    const form = document.getElementById('atsAnalyzerForm');
+    initATSForm() {
+        const form = document.getElementById('atsAnalyzerForm');
 
-    if (!form || form.dataset.initialized === 'true') return;
+        if (!form || form.dataset.initialized === 'true') return;
 
-    form.dataset.initialized = 'true';
+        form.dataset.initialized = 'true';
 
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
 
-        const fileInput = document.getElementById('atsResumeFile');
-        const roleInput = document.getElementById('atsTargetRole');
-        const status = document.getElementById('atsAnalysisStatus');
-        const output = document.getElementById('atsAnalysisOutput');
-        const results = document.getElementById('atsAnalysisResults');
-        const file = fileInput.files[0];
+            const fileInput = document.getElementById('atsResumeFile');
+            const roleInput = document.getElementById('atsTargetRole');
+            const status = document.getElementById('atsAnalysisStatus');
+            const output = document.getElementById('atsAnalysisOutput');
+            const results = document.getElementById('atsAnalysisResults');
+            const button = document.getElementById('atsAnalyzeButton');
 
-        if (!file) {
-            status.textContent = 'Please select a resume file.';
-            return;
-        }
+            const file = fileInput?.files?.[0];
+            const role = roleInput?.value.trim();
 
-        if (!file.name.toLowerCase().endsWith('.txt')) {
-            status.textContent =
-                'For now, please upload a TXT file. PDF and DOCX parsing needs additional support.';
-            return;
-        }
+            if (!file) {
+                if (status) status.textContent = 'Please select a resume file.';
+                return;
+            }
 
-        const text = await file.text();
+            if (!role) {
+                if (status) status.textContent = 'Please enter a target job role.';
+                return;
+            }
 
-        if (text.trim().length < 15) {
-            status.textContent = 'The resume text is too short to analyze.';
-            return;
-        }
+            const allowedExtensions = ['pdf', 'docx', 'txt'];
+            const extension = file.name.split('.').pop().toLowerCase();
 
-        status.textContent = 'Analyzing resume...';
+            if (!allowedExtensions.includes(extension)) {
+                if (status) {
+                    status.textContent = 'Please upload a PDF, DOCX or TXT file.';
+                }
+                return;
+            }
 
-        const role = roleInput.value.trim() || 'Software Engineer';
-        const lower = text.toLowerCase();
-        let score = 72;
+            if (file.size > 5 * 1024 * 1024) {
+                if (status) status.textContent = 'File size must be 5 MB or less.';
+                return;
+            }
 
-        if (lower.includes('python')) score += 5;
-        if (lower.includes('javascript')) score += 5;
-        if (lower.includes('sql')) score += 4;
+            const formData = new FormData();
+            formData.append('resume', file);
+            formData.append('targetJobRole', role);
 
-        score = Math.min(96, score);
+            if (button) button.disabled = true;
+            if (status) status.textContent = 'Analyzing resume with AI...';
+            if (output) output.textContent = '';
+            if (results) results.hidden = true;
 
-        output.textContent = JSON.stringify({
-            targetRole: role,
-            overallScore: score,
-            matchedKeywords: ['Python', 'JavaScript', 'SQL'].filter(
-                keyword => lower.includes(keyword.toLowerCase())
-            ),
-            note: 'Basic local test result. This is not yet an AI-generated ATS score.'
-        }, null, 2);
+            try {
+                const response = await fetch('/api/resume/analyze', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
 
-        results.hidden = false;
-        status.textContent = 'Resume test completed.';
-    });
-}
+                const data = await response.json();
+
+                if (!response.ok || data.success === false) {
+                    throw new Error(
+                        data.message || 'Resume analysis failed.'
+                    );
+                }
+
+                this.displayATSResult(data, role);
+
+                if (output) {
+                    output.textContent = JSON.stringify({
+                        targetRole: role,
+                        overallScore: data.overallScore,
+                        formattingScore: data.formattingScore,
+                        keywordScore: data.keywordScore,
+                        grammarScore: data.grammarScore,
+                        impactScore: data.impactScore,
+                        matchedKeywords: data.matchedKeywords,
+                        missingSkills: data.missingSkills,
+                        suggestions: data.suggestions
+                    }, null, 2);
+                }
+
+                if (results) results.hidden = false;
+                if (status) status.textContent = 'AI resume analysis completed!';
+
+            } catch (error) {
+                console.error('ATS analysis error:', error);
+
+                if (status) {
+                    status.textContent =
+                        error.message || 'Could not analyze the resume.';
+                }
+
+                if (results) results.hidden = true;
+
+                app.showToast(
+                    error.message || 'ATS analysis failed.',
+                    'error'
+                );
+            } finally {
+                if (button) button.disabled = false;
+            }
+        });
+    }
+
     handleFileUpload(event) {
-        const file = event.target.files[0];
+        const file = event.target.files?.[0];
+
         if (!file) return;
 
-        app.showToast(`Selected resume file: ${file.name}`, 'info');
-        
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('analyzerTextInput').value = e.target.result || `Resume parsed from file: ${file.name}\nCandidate with experience in Web Development, Python, and SQL.`;
-            this.analyzeResume();
-        };
-        reader.readAsText(file);
+        const extension = file.name.split('.').pop().toLowerCase();
+
+        if (!['pdf', 'docx', 'txt'].includes(extension)) {
+            app.showToast('Please select a PDF, DOCX or TXT file.', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        // Do not read PDF/DOCX as plain text or fabricate resume content.
+        app.showToast(
+            `Selected ${file.name}. Submit the ATS upload form to analyze it.`,
+            'info'
+        );
     }
 
     loadProfileText() {
-        const prof = profileManager ? profileManager.profileData : {};
+        const prof = (
+            typeof profileManager !== 'undefined' && profileManager
+        ) ? profileManager.profileData : {};
+
         const text = `
-NAME: ${prof.fullName}
-EMAIL: ${prof.email}
-OBJECTIVE: ${prof.objective}
-SKILLS: ${prof.skills ? prof.skills.join(', ') : ''}
-EXPERIENCE: ${prof.experience ? prof.experience.map(e => e.role + ' ' + e.company + ' ' + e.description).join('\n') : ''}
-PROJECTS: ${prof.projects ? prof.projects.map(p => p.title + ' ' + p.tech + ' ' + p.description).join('\n') : ''}
+NAME: ${prof.fullName || ''}
+EMAIL: ${prof.email || ''}
+OBJECTIVE: ${prof.objective || ''}
+
+SKILLS: ${
+    Array.isArray(prof.skills) ? prof.skills.join(', ') : ''
+}
+
+EXPERIENCE: ${
+    Array.isArray(prof.experience)
+        ? prof.experience.map(e =>
+            [e.role, e.company, e.description].filter(Boolean).join(' ')
+        ).join('\n')
+        : ''
+}
+
+PROJECTS: ${
+    Array.isArray(prof.projects)
+        ? prof.projects.map(p =>
+            [p.title, p.tech, p.description].filter(Boolean).join(' ')
+        ).join('\n')
+        : ''
+}
+
+EDUCATION: ${
+    Array.isArray(prof.education)
+        ? prof.education.map(e =>
+            [e.level, e.degree, e.university, e.institution, e.year]
+                .filter(Boolean).join(' ')
+        ).join('\n')
+        : ''
+}
         `.trim();
 
-        document.getElementById('analyzerTextInput').value = text;
-        app.showToast('Loaded profile resume text into analyzer', 'info');
-        this.analyzeResume();
+        const input = document.getElementById('analyzerTextInput');
+
+        if (input) input.value = text;
+
+        app.showToast('Profile text loaded into analyzer.', 'info');
     }
 
     async analyzeResume() {
-        const text = document.getElementById('analyzerTextInput').value;
-        const targetRole = document.getElementById('targetJobRole')?.value || 'Software Engineer';
+        const input = document.getElementById('analyzerTextInput');
+        const text = input?.value?.trim() || '';
+        const targetRole =
+            document.getElementById('targetJobRole')?.value?.trim()
+            || document.getElementById('atsTargetRole')?.value?.trim()
+            || 'Software Engineer';
 
-        if (!text || text.length < 15) {
-            app.showToast('Please enter or upload a valid resume with sufficient text to analyze.', 'error');
+        if (text.length < 15) {
+            app.showToast(
+                'Please enter a resume with sufficient text.',
+                'error'
+            );
             return;
         }
 
-        app.showToast('AI ATS Engine analyzing keywords, formatting, and industry relevance...', 'info');
+        app.showToast('Analyzing resume with Groq AI...', 'info');
 
-        let data = null;
         try {
-            const res = await fetch('/api/resume/analyze', {
+            const response = await fetch('/api/resume/analyze', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, targetJobRole: targetRole })
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    text,
+                    targetJobRole: targetRole
+                })
             });
-            data = await res.json();
-        } catch (e) {
-            console.log('Using client fallback for ATS calculation');
+
+            const data = await response.json();
+
+            if (!response.ok || data.success === false) {
+                throw new Error(
+                    data.message || 'Resume analysis failed.'
+                );
+            }
+
+            this.displayATSResult(data, targetRole);
+
+            app.showToast('AI ATS analysis completed!', 'success');
+
+        } catch (error) {
+            console.error('ATS analysis error:', error);
+
+            app.showToast(
+                error.message || 'Could not analyze resume.',
+                'error'
+            );
         }
+    }
 
-        if (!data || !data.overallScore) {
-            // Local fallback logic
-            const lower = text.toLowerCase();
-            let score = 72;
-            if (lower.includes('python')) score += 5;
-            if (lower.includes('react') || lower.includes('javascript')) score += 5;
-            if (lower.includes('sql')) score += 4;
-            score = Math.min(96, Math.max(62, score));
-            data = {
-                overallScore: score,
-                formattingScore: 95,
-                keywordScore: score - 5,
-                grammarScore: 98,
-                impactScore: score - 2,
-                matchedKeywords: ['Python', 'JavaScript', 'React', 'SQL'],
-                missingSkills: ['Docker', 'Kubernetes', 'CI/CD Pipelines', 'System Design'],
-                suggestions: [
-                    'Quantify accomplishments with concrete percentage metrics.',
-                    'Incorporate missing cloud keywords like Docker and CI/CD.',
-                    'Use high-impact action verbs like Spearheaded and Architected.'
-                ]
-            };
-        }
+    displayATSResult(data, targetRole) {
+        const emptyState = document.getElementById('analyzerEmptyState');
+        const report = document.getElementById('analyzerReportContent');
 
-        document.getElementById('analyzerEmptyState').style.display = 'none';
-        document.getElementById('analyzerReportContent').style.display = 'block';
+        if (emptyState) emptyState.style.display = 'none';
+        if (report) report.style.display = 'block';
 
-        // Populate metrics
-        document.getElementById('resOverallAtsScore').textContent = data.overallScore;
-        document.getElementById('resMatchGrade').textContent = data.overallScore > 85 ? 'Excellent ATS Match ✨' : 'Good ATS Match 👍';
-        document.getElementById('resMatchSummary').textContent = `Your resume scored ${data.overallScore}/100 based on structural parsing, action verb density, and ${targetRole} keywords.`;
+        const setText = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        };
 
-        document.getElementById('resFmtScore').textContent = `${data.formattingScore || 95}/100`;
-        document.getElementById('resKeyScore').textContent = `${data.keywordScore || 82}/100`;
-        document.getElementById('resGrammarScore').textContent = `${data.grammarScore || 98}/100`;
-        document.getElementById('resImpactScore').textContent = `${data.impactScore || 85}/100`;
+        setText('resOverallAtsScore', data.overallScore);
 
-        // Render Missing Skills
+        setText(
+            'resMatchGrade',
+            data.overallScore >= 85
+                ? 'Excellent ATS Match'
+                : data.overallScore >= 70
+                    ? 'Good ATS Match'
+                    : data.overallScore >= 50
+                        ? 'Moderate ATS Match'
+                        : 'Needs Improvement'
+        );
+
+        setText(
+            'resMatchSummary',
+            `Your resume scored ${data.overallScore}/100 for the ${targetRole} role.`
+        );
+
+        setText('resFmtScore', `${data.formattingScore}/100`);
+        setText('resKeyScore', `${data.keywordScore}/100`);
+        setText('resGrammarScore', `${data.grammarScore}/100`);
+        setText('resImpactScore', `${data.impactScore}/100`);
+
         const missingContainer = document.getElementById('resMissingSkills');
+
         if (missingContainer) {
-            missingContainer.innerHTML = (data.missingSkills || []).map(m => `
-                <span class="skill-tag" style="background: rgba(217, 119, 6, 0.15); color: #d97706; border-color: rgba(217, 119, 6, 0.3);">
-                    + ${m}
-                    <i class="fa-solid fa-plus" title="Add to Profile Skills" onclick="resumeAnalyzer.addMissingSkill('${m}')"></i>
-                </span>
-            `).join('');
+            missingContainer.replaceChildren();
+
+            (data.missingSkills || []).forEach((skill) => {
+                const tag = document.createElement('span');
+                tag.className = 'skill-tag';
+                tag.style.background = 'rgba(217, 119, 6, 0.15)';
+                tag.style.color = '#d97706';
+                tag.style.borderColor = 'rgba(217, 119, 6, 0.3)';
+                tag.appendChild(document.createTextNode(`+ ${skill} `));
+
+                const addButton = document.createElement('button');
+                addButton.type = 'button';
+                addButton.textContent = '+';
+                addButton.title = `Add ${skill} to profile skills`;
+                addButton.addEventListener('click', () => {
+                    this.addMissingSkill(skill);
+                });
+
+                tag.appendChild(addButton);
+                missingContainer.appendChild(tag);
+            });
         }
 
-        // Render Suggestions
         const suggestionsList = document.getElementById('resSuggestionsList');
+
         if (suggestionsList) {
-            suggestionsList.innerHTML = (data.suggestions || []).map(s => `<li>${s}</li>`).join('');
+            suggestionsList.replaceChildren();
+
+            (data.suggestions || []).forEach((suggestion) => {
+                const item = document.createElement('li');
+                item.textContent = suggestion;
+                suggestionsList.appendChild(item);
+            });
         }
 
-        // Render Charts
-        this.renderCharts(data.overallScore);
-        if (app.triggerConfetti) app.triggerConfetti();
-        app.showToast('ATS Analysis completed and saved to database!', 'success');
+        this.renderCharts(data);
     }
 
     addMissingSkill(skillName) {
-        if (profileManager && !profileManager.profileData.skills.includes(skillName)) {
-            profileManager.profileData.skills.push(skillName);
-            profileManager.saveProfile();
-            app.showToast(`Added '${skillName}' to your Profile Hub skills!`, 'success');
+        if (
+            typeof profileManager !== 'undefined' &&
+            profileManager &&
+            profileManager.profileData
+        ) {
+            if (!Array.isArray(profileManager.profileData.skills)) {
+                profileManager.profileData.skills = [];
+            }
+
+            const skills = profileManager.profileData.skills;
+
+            if (!skills.includes(skillName)) {
+                skills.push(skillName);
+                profileManager.saveProfile();
+
+                app.showToast(
+                    `Added '${skillName}' to your profile skills!`,
+                    'success'
+                );
+            } else {
+                app.showToast('This skill is already in your profile.', 'info');
+            }
         }
     }
 
-    renderCharts(overallScore) {
-        // Radar Chart
+    renderCharts(data) {
         const radarCtx = document.getElementById('analyzerRadarChart');
-        if (radarCtx) {
+
+        if (radarCtx && typeof Chart !== 'undefined') {
             if (this.radarChart) this.radarChart.destroy();
+
             this.radarChart = new Chart(radarCtx, {
                 type: 'radar',
                 data: {
-                    labels: ['Keywords', 'Formatting', 'Grammar', 'Impact', 'Readability', 'Completeness'],
+                    labels: [
+                        'Keywords',
+                        'Formatting',
+                        'Grammar',
+                        'Impact'
+                    ],
                     datasets: [{
                         label: 'Resume Score Breakdown',
-                        data: [overallScore - 5, 95, 98, overallScore - 2, 90, 88],
+                        data: [
+                            data.keywordScore,
+                            data.formattingScore,
+                            data.grammarScore,
+                            data.impactScore
+                        ],
                         backgroundColor: 'rgba(79, 70, 229, 0.25)',
                         borderColor: '#4f46e5',
                         borderWidth: 2,
@@ -210,28 +372,40 @@ PROJECTS: ${prof.projects ? prof.projects.map(p => p.title + ' ' + p.tech + ' ' 
                 },
                 options: {
                     responsive: true,
-                    scales: { r: { min: 50, max: 100, ticks: { display: false } } }
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 100,
+                            ticks: { display: false }
+                        }
+                    }
                 }
             });
         }
 
-        // Doughnut Chart
         const doughnutCtx = document.getElementById('analyzerDoughnutChart');
-        if (doughnutCtx) {
+
+        if (doughnutCtx && typeof Chart !== 'undefined') {
             if (this.doughnutChart) this.doughnutChart.destroy();
+
             this.doughnutChart = new Chart(doughnutCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Matched Keywords', 'Missing Industry Terms'],
+                    labels: ['ATS Score', 'Remaining Score'],
                     datasets: [{
-                        data: [overallScore, 100 - overallScore],
+                        data: [
+                            data.overallScore,
+                            100 - data.overallScore
+                        ],
                         backgroundColor: ['#059669', '#d97706'],
                         borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { position: 'bottom' } }
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
                 }
             });
         }
@@ -239,3 +413,4 @@ PROJECTS: ${prof.projects ? prof.projects.map(p => p.title + ' ' + p.tech + ' ' 
 }
 
 const resumeAnalyzer = new ResumeAnalyzer();
+

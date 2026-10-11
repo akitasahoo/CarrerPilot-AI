@@ -10,4 +10,4 @@ class Config:
         "careerpilot-secret-key"
     )
 
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ 
