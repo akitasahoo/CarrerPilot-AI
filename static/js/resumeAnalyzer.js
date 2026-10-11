@@ -9,6 +9,66 @@ class ResumeAnalyzer {
         this.doughnutChart = null;
     }
 
+initATSForm() {
+    const form = document.getElementById('atsAnalyzerForm');
+
+    if (!form || form.dataset.initialized === 'true') return;
+
+    form.dataset.initialized = 'true';
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const fileInput = document.getElementById('atsResumeFile');
+        const roleInput = document.getElementById('atsTargetRole');
+        const status = document.getElementById('atsAnalysisStatus');
+        const output = document.getElementById('atsAnalysisOutput');
+        const results = document.getElementById('atsAnalysisResults');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            status.textContent = 'Please select a resume file.';
+            return;
+        }
+
+        if (!file.name.toLowerCase().endsWith('.txt')) {
+            status.textContent =
+                'For now, please upload a TXT file. PDF and DOCX parsing needs additional support.';
+            return;
+        }
+
+        const text = await file.text();
+
+        if (text.trim().length < 15) {
+            status.textContent = 'The resume text is too short to analyze.';
+            return;
+        }
+
+        status.textContent = 'Analyzing resume...';
+
+        const role = roleInput.value.trim() || 'Software Engineer';
+        const lower = text.toLowerCase();
+        let score = 72;
+
+        if (lower.includes('python')) score += 5;
+        if (lower.includes('javascript')) score += 5;
+        if (lower.includes('sql')) score += 4;
+
+        score = Math.min(96, score);
+
+        output.textContent = JSON.stringify({
+            targetRole: role,
+            overallScore: score,
+            matchedKeywords: ['Python', 'JavaScript', 'SQL'].filter(
+                keyword => lower.includes(keyword.toLowerCase())
+            ),
+            note: 'Basic local test result. This is not yet an AI-generated ATS score.'
+        }, null, 2);
+
+        results.hidden = false;
+        status.textContent = 'Resume test completed.';
+    });
+}
     handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;

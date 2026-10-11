@@ -2196,57 +2196,62 @@
                 </section>
 
 
-                <!-- ================================================= -->
-                <!-- 4. ATS ANALYZER -->
-                <!-- ================================================= -->
+              
+<!-- 4. ATS ANALYZER -->
+<section class="view-panel" id="view-analyzer">
+    <div class="view-header">
+        <div>
+            <h1 class="view-title">AI ATS Resume Analyzer 🎯</h1>
+            <p class="view-subtitle">
+                Upload your resume and analyze its compatibility with a target job role.
+            </p>
+        </div>
+    </div>
 
-                <section
-                    class="view-panel"
-                    id="view-analyzer">
+    <div class="glass-panel" style="padding: 24px;">
+        <h2>Analyze Your Resume</h2>
+        <p>Select your resume file and enter the job role you want to apply for.</p>
 
-                    <div class="view-header">
+        <form id="atsAnalyzerForm">
+            <div style="margin: 20px 0;">
+                <label for="atsResumeFile">Upload Resume (PDF, DOCX or TXT)</label>
+                <input
+                    type="file"
+                    id="atsResumeFile"
+                    name="resume"
+                    accept=".pdf,.docx,.txt"
+                    required
+                    style="display:block; margin-top:10px; max-width:100%;"
+                >
+            </div>
 
-                        <div>
+            <div style="margin: 20px 0;">
+                <label for="atsTargetRole">Target Job Role</label>
+                <input
+                    type="text"
+                    id="atsTargetRole"
+                    name="targetJobRole"
+                    placeholder="e.g. Python Developer"
+                    required
+                    style="display:block; width:100%; margin-top:10px; padding:12px;"
+                >
+            </div>
 
-                            <h1 class="view-title">
-                                AI ATS Resume Analyzer 🎯
-                            </h1>
+            <button type="submit" class="btn btn-primary" id="atsAnalyzeButton">
+                Analyze Resume
+            </button>
+        </form>
 
-                            <p class="view-subtitle">
-                                Instant ATS compatibility scoring
-                                and keyword match analysis.
-                            </p>
+        <div id="atsAnalysisStatus" role="status" aria-live="polite"
+             style="margin-top:20px;"></div>
 
-                        </div>
-
-                    </div>
-
-
-                    <div
-                        class="glass-panel placeholder-feature-card">
-
-                        <div class="placeholder-icon-wrapper">
-
-                            <i class="fa-solid fa-hourglass-half"></i>
-
-                        </div>
-
-                        <h2>
-                            ATS Resume Analyzer Under Maintenance
-                        </h2>
-
-                        <p>
-                            This module is currently undergoing system
-                            updates and will be re-enabled in an upcoming release.
-                        </p>
-
-                        <span class="badge badge-purple">
-                            Coming Soon
-                        </span>
-
-                    </div>
-
-                </section>
+        <div id="atsAnalysisResults" style="margin-top:20px;" hidden>
+            <h3>Analysis Results</h3>
+            <pre id="atsAnalysisOutput"
+                 style="white-space:pre-wrap; overflow-wrap:anywhere;"></pre>
+        </div>
+    </div>
+</section>
 
 
                 <!-- ================================================= -->
@@ -2653,6 +2658,14 @@
     <script src="static/js/dashboard.js"></script>
     <script src="static/js/adminPanel.js"></script>
 
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof ResumeAnalyzer !== 'undefined') {
+            window.resumeAnalyzer = new ResumeAnalyzer();
+            window.resumeAnalyzer.initATSForm();
+        }
+    });
+    </script>
 </body>
 
 </html>
