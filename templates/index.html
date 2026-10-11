@@ -2242,6 +2242,149 @@
             </button>
         </form>
 
+       
+<!-- ATS Analysis Results -->
+<div id="analyzerReportContent" style="display: none; margin-top: 25px;">
+
+    <h2 style="margin-bottom: 20px;">Your ATS Analysis Results</h2>
+
+    <!-- Overall Score -->
+    <div class="ats-result-grid">
+
+        <div class="ats-result-card ats-overall-card">
+            <h3>Overall ATS Score</h3>
+            <div class="ats-score" id="resOverallAtsScore">0</div>
+            <p id="resMatchGrade">Analysis pending</p>
+            <p id="resMatchSummary"></p>
+        </div>
+
+        <div class="ats-result-card">
+            <h3>Formatting Score</h3>
+            <div class="ats-score" id="resFmtScore">0/100</div>
+        </div>
+
+        <div class="ats-result-card">
+            <h3>Keyword Score</h3>
+            <div class="ats-score" id="resKeyScore">0/100</div>
+        </div>
+
+        <div class="ats-result-card">
+            <h3>Grammar Score</h3>
+            <div class="ats-score" id="resGrammarScore">0/100</div>
+        </div>
+
+        <div class="ats-result-card">
+            <h3>Impact Score</h3>
+            <div class="ats-score" id="resImpactScore">0/100</div>
+        </div>
+
+    </div>
+
+    <!-- Charts -->
+    <div class="ats-chart-grid">
+
+        <div class="ats-result-card">
+            <h3>Resume Score Breakdown</h3>
+            <canvas id="analyzerRadarChart"></canvas>
+        </div>
+
+        <div class="ats-result-card">
+            <h3>Overall ATS Score</h3>
+            <canvas id="analyzerDoughnutChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- Missing Skills -->
+    <div class="ats-result-card" style="margin-top: 20px;">
+        <h3>Missing Skills</h3>
+        <p>Skills you may need to develop for your target role.</p>
+        <div id="resMissingSkills" class="ats-skills-container"></div>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="ats-result-card" style="margin-top: 20px;">
+        <h3>AI Suggestions</h3>
+        <ul id="resSuggestionsList"></ul>
+    </div>
+
+</div>
+
+<style>
+.ats-result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.ats-result-card {
+    min-width: 0;
+    padding: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    background: rgba(17, 24, 39, 0.8);
+    color: #f8fafc;
+}
+
+.ats-result-card h3 {
+    margin: 0 0 14px;
+    font-size: 17px;
+}
+
+.ats-score {
+    font-size: 30px;
+    font-weight: 700;
+    color: #8b7cff;
+}
+
+.ats-overall-card .ats-score {
+    font-size: 48px;
+    color: #a78bfa;
+}
+
+.ats-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.ats-chart-grid canvas {
+    width: 100% !important;
+    max-height: 320px;
+}
+
+.ats-skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ats-skills-container .skill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+#resSuggestionsList li {
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+    .ats-result-card {
+        padding: 16px;
+    }
+
+    .ats-chart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+
         <div id="atsAnalysisStatus" role="status" aria-live="polite"
              style="margin-top:20px;"></div>
 

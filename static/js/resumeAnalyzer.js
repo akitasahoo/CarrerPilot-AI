@@ -80,23 +80,35 @@ class ResumeAnalyzer {
                     );
                 }
 
-                this.displayATSResult(data, role);
+this.displayATSResult(data, role);
 
-                if (output) {
-                    output.textContent = JSON.stringify({
-                        targetRole: role,
-                        overallScore: data.overallScore,
-                        formattingScore: data.formattingScore,
-                        keywordScore: data.keywordScore,
-                        grammarScore: data.grammarScore,
-                        impactScore: data.impactScore,
-                        matchedKeywords: data.matchedKeywords,
-                        missingSkills: data.missingSkills,
-                        suggestions: data.suggestions
-                    }, null, 2);
-                }
+// Hide the raw JSON output
+if (output) {
+    output.style.display = 'none';
+    output.textContent = '';
+}
 
-                if (results) results.hidden = false;
+// Show the results container
+if (results) {
+    results.hidden = true;
+}
+if (results) {
+    results.hidden = false;
+    results.style.display = 'block';
+}
+
+// Show the dashboard report
+const report = document.getElementById('analyzerReportContent');
+const emptyState = document.getElementById('analyzerEmptyState');
+
+if (emptyState) emptyState.style.display = 'none';
+if (report) report.style.display = 'block';
+
+if (status) {
+    status.textContent = 'AI resume analysis completed!';
+}
+
+
                 if (status) status.textContent = 'AI resume analysis completed!';
 
             } catch (error) {
@@ -252,6 +264,32 @@ EDUCATION: ${
         };
 
         setText('resOverallAtsScore', data.overallScore);
+    
+// Update Dashboard ATS score after successful analysis
+const dashboardScore = document.getElementById('dashAtsScore');
+
+if (dashboardScore) {
+    dashboardScore.textContent = `${data.overallScore}/100`;
+
+    const scoreCard = dashboardScore.closest('.stat-value-group')
+        ?.parentElement;
+
+    const subtext = scoreCard?.querySelector('.stat-subtext');
+
+    if (subtext) {
+        subtext.textContent = 'Latest resume analysis';
+    }
+}
+
+
+
+// Update the Dashboard's Latest ATS Resume Score
+const dashboardAtsScore = document.getElementById('dashAtsScore');
+
+if (dashboardAtsScore) {
+    dashboardAtsScore.textContent = `${data.overallScore}/100`;
+}
+
 
         setText(
             'resMatchGrade',
