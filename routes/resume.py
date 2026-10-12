@@ -7,6 +7,7 @@ from io import BytesIO
 from docx import Document
 from dotenv import load_dotenv
 from groq import Groq
+from models.database import get_db_connection
 
 load_dotenv()
 

@@ -54,7 +54,7 @@ class Dashboard {
                     labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Today'],
                     datasets: [{
                         label: 'ATS Resume Score',
-                        data: [68, 74, 80, 82, 88],
+                        data: this.atsScoreHistory || [],
                         borderColor: '#059669',
                         backgroundColor: 'rgba(5, 150, 105, 0.1)',
                         fill: true,
