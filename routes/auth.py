@@ -219,14 +219,11 @@ def current_user():
 # ==========================================
 # GET CURRENT USER PROFILE
 # ==========================================
-
 @auth.route("/api/profile", methods=["GET"])
 def get_profile():
-
     user_id = session.get("user_id")
 
     if not user_id:
-
         return jsonify({
             "success": False,
             "message": "Not logged in."
@@ -234,86 +231,77 @@ def get_profile():
 
     connection = get_db_connection()
 
-    user = connection.execute(
-        """
-        SELECT name, email, gender, role, title
-        FROM users
-        WHERE id = ?
-        """,
-        (user_id,)
-    ).fetchone()
+    try:
+        user = connection.execute(
+            """
+            SELECT name, email, gender, role, title
+            FROM users
+            WHERE id = ?
+            """,
+            (user_id,)
+        ).fetchone()
 
-    if not user:
+        if not user:
+            session.clear()
+            return jsonify({
+                "success": False,
+                "message": "User not found."
+            }), 404
 
-        connection.close()
+        profile = connection.execute(
+            """
+            SELECT profile_data
+            FROM profiles
+            WHERE user_id = ?
+            """,
+            (user_id,)
+        ).fetchone()
+
+        if profile:
+            data = json.loads(profile["profile_data"])
+        else:
+            if user["role"] == "admin":
+                avatar = "/static/images/avatar-admin.svg"
+            elif user["gender"] == "male":
+                avatar = "/static/images/avatar-male.svg"
+            else:
+                avatar = "/static/images/avatar-female.svg"
+
+            data = {
+                "fullName": user["name"],
+                "email": user["email"],
+                "gender": user["gender"] or "",
+                "avatarUrl": avatar,
+                "phone": "",
+                "location": "",
+                "linkedin": "",
+                "github": "",
+                "website": "",
+                "headline": "",
+                "objective": "",
+                "skills": [],
+                "education": [],
+                "projects": [],
+                "experience": [],
+                "certifications": "",
+                "achievements": "",
+                "languages": "",
+                "interests": ""
+            }
 
         return jsonify({
+            "success": True,
+            "profile": data
+        })
+
+    except (json.JSONDecodeError, TypeError):
+        return jsonify({
             "success": False,
-            "message": "User not found."
-        }), 404
+            "message": "Saved profile data is invalid."
+        }), 500
 
-    profile = connection.execute(
-        """
-        SELECT profile_data
-        FROM profiles
-        WHERE user_id = ?
-        """,
-        (user_id,)
-    ).fetchone()
-
-    if profile:
-
-        data = json.loads(profile["profile_data"])
-
-    else:
-
-        if user["role"] == "admin":
-            avatar = "/static/images/avatar-admin.svg"
-
-        elif user["gender"] == "male":
-            avatar = "/static/images/avatar-male.svg"
-
-        else:
-            avatar = "/static/images/avatar-female.svg"
-
-        data = {
-
-            # Signup data
-            "fullName": user["name"],
-            "email": user["email"],
-            "gender": user["gender"] or "",
-
-            # Automatically selected avatar
-            "avatarUrl": avatar,
-
-            # Personal information
-            "phone": "",
-            "location": "",
-            "linkedin": "",
-            "github": "",
-            "website": "",
-
-            # Career information
-            "headline": "",
-            "objective": "",
-
-            # Resume information
-            "skills": [],
-            "education": [],
-            "projects": [],
-            "experience": [],
-
-            # Additional information
-            "certifications": "",
-            "achievements": "",
-            "languages": "",
-            "interests": ""
-        }
-
-    connection.close()
-
-    return jsonify(data)
-
+    finally:
+        connection.close()
 
 # ==========================================
 # SAVE CURRENT USER PROFILE
